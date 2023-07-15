@@ -1,0 +1,26 @@
+name: "SpacelifeSpawn"
+main: de.petropia.spacelifespawn.SpacelifeSpawn
+version: 1.0.0
+author: "Professor_Sam"
+api-version: 1.19
+depend:
+  - "TurtleServer"
+  - "SpacelifeCore"
+commands:
+  shop:
+    description: "info about a shop"
+    aliases: "laden"
+    permission: "spacelifespawn.command.shop"
+permissions:
+  spacelifespawn.command.shop.info:
+    default: true
+    description: "info about a shop"
+  spacelifespawn.command.shop.add:
+    description: "Add a shop"
+    default: false
+  spacelifespawn.command.shop.list:
+    description: "List all shops"
+    default: false
+  spacelifespawn.command.shop.tp:
+    description: "Telepot to a shop"
+    default: false
