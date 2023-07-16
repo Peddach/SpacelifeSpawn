@@ -28,7 +28,7 @@ public class ShopRentListener implements Listener {
 
     private static final List<Shop> shopsInRentingProcess = new ArrayList<>();
 
-    @EventHandler
+    @EventHandler(ignoreCancelled = true)
     public void onSignClick(PlayerInteractEvent event){
         if(!event.getAction().isRightClick()){
             return;

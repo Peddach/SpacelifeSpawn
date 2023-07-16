@@ -2,13 +2,17 @@ package de.petropia.spacelifespawn.spawnprotection;
 
 import de.petropia.spacelifespawn.shop.Shop;
 import de.petropia.spacelifespawn.shop.ShopRegistry;
+import io.papermc.paper.event.player.PlayerFlowerPotManipulateEvent;
 import org.bukkit.Location;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.BlockBreakEvent;
+import org.bukkit.event.block.BlockPistonEvent;
 import org.bukkit.event.block.BlockPlaceEvent;
+import org.bukkit.event.entity.EntityExplodeEvent;
 import org.bukkit.event.entity.EntityInteractEvent;
+import org.bukkit.event.player.PlayerBucketEvent;
 
 public class SpawnProtectionListener implements Listener {
 
@@ -17,6 +21,32 @@ public class SpawnProtectionListener implements Listener {
         if(isPlayerPermittedToEdit(event.getBlock().getLocation(), event.getPlayer())){
             return;
         }
+        event.setCancelled(true);
+    }
+
+    @EventHandler
+    public void onWaterPalce(PlayerBucketEvent event){
+        if(isPlayerPermittedToEdit(event.getBlock().getLocation(), event.getPlayer())){
+            return;
+        }
+        event.setCancelled(true);
+    }
+
+    @EventHandler
+    public void onFlowerPot(PlayerFlowerPotManipulateEvent event){
+        if(isPlayerPermittedToEdit(event.getFlowerpot().getLocation(), event.getPlayer())){
+            return;
+        }
+        event.setCancelled(true);
+    }
+
+    @EventHandler
+    public void onExplosion(EntityExplodeEvent event) {
+        event.setCancelled(true);
+    }
+
+    @EventHandler
+    public void onPistonEvent(BlockPistonEvent event){
         event.setCancelled(true);
     }
 
