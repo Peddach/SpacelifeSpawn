@@ -4,6 +4,7 @@ import de.petropia.spacelifespawn.SpacelifeSpawn;
 import de.petropia.spacelifespawn.database.ShopDatabase;
 import de.petropia.spacelifespawn.shop.Shop;
 import de.petropia.spacelifespawn.shop.ShopRegistry;
+import de.petropia.spacelifespawn.shop.gui.ShopEditGui;
 import de.petropia.turtleServer.api.util.MessageUtil;
 import de.petropia.turtleServer.api.util.TimeUtil;
 import net.kyori.adventure.text.Component;
@@ -53,6 +54,25 @@ public class ShopCommand implements CommandExecutor, TabCompleter {
             }
             SpacelifeSpawn.getInstance().getMessageUtil().sendMessage(player, Component.text("Du befindest dich in keinem Shop", NamedTextColor.RED));
             return false;
+        }
+        if(args.length == 1 && args[0].equalsIgnoreCase("edit")){
+            if(!player.hasPermission("spacelifespawn.command.shop.edit")){
+                return false;
+            }
+            for(Shop shop : ShopRegistry.getShops()){
+                if(!shop.isRented()){
+                    continue;
+                }
+                if(!shop.getOwner().equals(player.getUniqueId())){
+                    continue;
+                }
+                Location location = player.getLocation();
+                if(!shop.isInShop(location.getBlockX(), location.getBlockY(), location.getBlockZ())){
+                    continue;
+                }
+                new ShopEditGui(player, shop);
+            }
+            SpacelifeSpawn.getInstance().getMessageUtil().sendMessage(player, Component.text("Dieser Shop gehört nicht dir oder du bist kein Mitglied!", NamedTextColor.RED));
         }
         if(args.length >= 1 && args[0].equalsIgnoreCase("add")){
             if(!player.hasPermission("spacelifespawn.command.shop.add")){
@@ -175,8 +195,11 @@ public class ShopCommand implements CommandExecutor, TabCompleter {
             if (player.hasPermission("spacelifespawn.command.shop.list")) {
                 completions.add("list");
             }
-            if(player.hasPermission("spacelifespawn.cmmand.shop.tp")){
+            if(player.hasPermission("spacelifespawn.command.shop.tp")){
                 completions.add("tp");
+            }
+            if(player.hasPermission("spacelifespawn.command.shop.edit")){
+                completions.add("edit");
             }
         }
         if(args.length == 2 && args[0].equalsIgnoreCase("tp")){

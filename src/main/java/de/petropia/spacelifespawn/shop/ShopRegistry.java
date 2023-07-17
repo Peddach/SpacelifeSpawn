@@ -38,6 +38,9 @@ public class ShopRegistry {
             Instant now = Instant.now();
             SHOPS.forEach(shop -> {
                 shop.updateSigns();
+                if(!shop.isRented()){
+                    return;
+                }
                 if(shop.getRentedUntil() < now.getEpochSecond()){
                     shop.unrent();
                 }

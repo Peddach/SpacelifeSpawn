@@ -7,12 +7,11 @@ import org.bukkit.Location;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
-import org.bukkit.event.block.BlockBreakEvent;
-import org.bukkit.event.block.BlockPistonEvent;
-import org.bukkit.event.block.BlockPlaceEvent;
+import org.bukkit.event.block.*;
 import org.bukkit.event.entity.EntityExplodeEvent;
 import org.bukkit.event.entity.EntityInteractEvent;
-import org.bukkit.event.player.PlayerBucketEvent;
+import org.bukkit.event.player.PlayerBucketEmptyEvent;
+import org.bukkit.event.player.PlayerBucketFillEvent;
 
 public class SpawnProtectionListener implements Listener {
 
@@ -25,7 +24,14 @@ public class SpawnProtectionListener implements Listener {
     }
 
     @EventHandler
-    public void onWaterPalce(PlayerBucketEvent event){
+    public void onWaterPalce(PlayerBucketEmptyEvent event){
+        if(isPlayerPermittedToEdit(event.getBlock().getLocation(), event.getPlayer())){
+            return;
+        }
+        event.setCancelled(true);
+    }
+    @EventHandler
+    public void onWaterPalce(PlayerBucketFillEvent event){
         if(isPlayerPermittedToEdit(event.getBlock().getLocation(), event.getPlayer())){
             return;
         }
@@ -46,7 +52,11 @@ public class SpawnProtectionListener implements Listener {
     }
 
     @EventHandler
-    public void onPistonEvent(BlockPistonEvent event){
+    public void onPistonEvent(BlockPistonExtendEvent event){
+        event.setCancelled(true);
+    }
+    @EventHandler
+    public void onPistonEvent(BlockPistonRetractEvent event){
         event.setCancelled(true);
     }
 

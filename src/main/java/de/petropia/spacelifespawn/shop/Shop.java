@@ -1,5 +1,7 @@
 package de.petropia.spacelifespawn.shop;
 
+import de.petropia.spacelifeCore.player.SpacelifeDatabase;
+import de.petropia.spacelifeCore.warp.Warp;
 import de.petropia.spacelifespawn.SpacelifeSpawn;
 import de.petropia.spacelifespawn.database.ShopDatabase;
 import dev.morphia.annotations.Entity;
@@ -127,6 +129,12 @@ public class Shop implements Cloneable {
 
     public void unrent() {
         SpacelifeSpawn.getInstance().getLogger().info(shopID + " is expired!");
+        for(Warp warp : SpacelifeDatabase.getInstance().getWarps()){
+            if(warp.getName().equalsIgnoreCase(name)){
+                SpacelifeDatabase.getInstance().removeWarp(warp.getName());
+                break;
+            }
+        }
         this.owner = null;
         this.ownerName = null;
         this.rented = false;
@@ -145,7 +153,7 @@ public class Shop implements Cloneable {
             for (int y = minY; y <= maxY; y++) {
                 for (int z = minZ; z <= maxZ; z++) {
                     Block block = Bukkit.getWorld("world").getBlockAt(x, y, z);
-                    block.setType(Material.AIR);
+                    block.setType(Material.AIR, false);
                 }
             }
         }

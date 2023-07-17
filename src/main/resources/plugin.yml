@@ -24,3 +24,6 @@ permissions:
   spacelifespawn.command.shop.tp:
     description: "Telepot to a shop"
     default: false
+  spacelifespawn.command.shop.edit:
+    description: "Edit a shop"
+    default: false
