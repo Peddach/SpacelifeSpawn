@@ -63,7 +63,7 @@ public class ShopCommand implements CommandExecutor, TabCompleter {
                 if(!shop.isRented()){
                     continue;
                 }
-                if(!shop.getOwner().equals(player.getUniqueId())){
+                if(!(shop.getOwner().equals(player.getUniqueId()) || shop.getTrustedPlayers().contains(player.getUniqueId()))){
                     continue;
                 }
                 Location location = player.getLocation();

@@ -35,6 +35,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 @Entity
 public class Shop implements Cloneable {
@@ -47,7 +48,7 @@ public class Shop implements Cloneable {
     private String ownerName;
     private boolean rented;
     private long rentedUntil;
-    private List<UUID> trustedPlayers;
+    private List<String> trustedPlayers;
     private int x1;
     private int y1;
     private int z1;
@@ -375,7 +376,7 @@ public class Shop implements Cloneable {
         if(trustedPlayers == null){
             trustedPlayers = new ArrayList<>();
         }
-        return new ArrayList<>(trustedPlayers);
+        return trustedPlayers.stream().map(UUID::fromString).collect(Collectors.toList());
     }
 
     /**
@@ -383,7 +384,7 @@ public class Shop implements Cloneable {
      * @param player UUID of Player who should be able to build
      */
     public void addTrustedPlayer(UUID player){
-        trustedPlayers.add(player);
+        trustedPlayers.add(player.toString());
         ShopDatabase.getInstance().saveShop(this);
     }
 
@@ -392,7 +393,7 @@ public class Shop implements Cloneable {
      * @param player UUID of Player who should not be able to build anymore
      */
     public void removeTrustedPlayer(UUID player){
-        if(trustedPlayers.remove(player)){
+        if(trustedPlayers.remove(player.toString())){
             ShopDatabase.getInstance().saveShop(this);
         }
     }
