@@ -1,28 +1,43 @@
 package de.petropia.spacelifespawn.shop;
 
+import com.github.juliarn.npclib.api.Npc;
+import com.github.juliarn.npclib.api.profile.Profile;
+import com.github.juliarn.npclib.api.profile.ProfileProperty;
+import com.github.juliarn.npclib.bukkit.util.BukkitPlatformUtil;
 import de.petropia.spacelifeCore.player.SpacelifeDatabase;
 import de.petropia.spacelifeCore.warp.Warp;
 import de.petropia.spacelifespawn.SpacelifeSpawn;
 import de.petropia.spacelifespawn.database.ShopDatabase;
+import de.petropia.spacelifespawn.shop.gui.ShopNpcListener;
+import de.petropia.turtleServer.server.TurtleServer;
 import dev.morphia.annotations.Entity;
 import dev.morphia.annotations.Id;
 import dev.morphia.annotations.Indexed;
+import dev.morphia.annotations.Transient;
 import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.format.TextColor;
 import net.kyori.adventure.text.format.TextDecoration;
 import org.bson.types.ObjectId;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.Material;
+import org.bukkit.World;
 import org.bukkit.block.Block;
 import org.bukkit.block.Sign;
+import org.bukkit.entity.ArmorStand;
 import org.bukkit.entity.Player;
+import org.bukkit.inventory.ItemStack;
+import org.bukkit.plugin.Plugin;
+import org.bukkit.scoreboard.Scoreboard;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 
 @Entity
@@ -46,7 +61,15 @@ public class Shop implements Cloneable {
     private int signX;
     private int singY;
     private int signZ;
-
+    @Transient
+    private Npc<World, Player, ItemStack, Plugin> npc;
+    @Transient
+    private ArmorStand tag;
+    private double npcX;
+    private double npcY;
+    private double npcZ;
+    private float npcPitch;
+    private float npcYaw;
     /**
      * Constructor for Morphia
      */
@@ -124,7 +147,13 @@ public class Shop implements Cloneable {
         this.ownerName = player.getName();
         this.rented = true;
         this.name = name;
+        this.npcX = (x1 + x2) / 2.0;
+        this.npcY = Math.min(y1, y2);
+        this.npcZ = (z1 + z2) / 2.0;
+        this.npcPitch = 0;
+        this.npcYaw = -90F;
         ShopDatabase.getInstance().saveShop(this);
+        spawnNPC();
     }
 
     public void unrent() {
@@ -135,6 +164,7 @@ public class Shop implements Cloneable {
                 break;
             }
         }
+        removeNPC();
         this.owner = null;
         this.ownerName = null;
         this.rented = false;
@@ -161,11 +191,79 @@ public class Shop implements Cloneable {
 
     protected void onLoad(){
         writeSigns();
+        if(rented){
+           spawnNPC();
+        }
     }
 
+    private void spawnNPC() {
+        TurtleServer.getMongoDBHandler().getPetropiaPlayerByUUID(owner).thenAccept(petropiaPlayer -> Bukkit.getServer().getScheduler().runTask(SpacelifeSpawn.getInstance(), () -> {
+            ProfileProperty profileProperty = new ProfileProperty() {
+                @Override
+                public @NotNull String name() {
+                    return "textures";
+                }
+                @Override
+                public @NotNull String value() {
+                    if(petropiaPlayer == null){
+                        SpacelifeSpawn.getInstance().getLogger().info("Skin for " + ownerName + " not found!");
+                        return "ewogICJ0aW1lc3RhbXAiIDogMTY4OTYxMzExMjc5OSwKICAicHJvZmlsZUlkIiA6ICJjMDZmODkwNjRjOGE0OTExOWMyOWVhMWRiZDFhYWI4MiIsCiAgInByb2ZpbGVOYW1lIiA6ICJNSEZfU3RldmUiLAogICJzaWduYXR1cmVSZXF1aXJlZCIgOiBmYWxzZSwKICAidGV4dHVyZXMiIDogewogICAgIlNLSU4iIDogewogICAgICAidXJsIiA6ICJodHRwOi8vdGV4dHVyZXMubWluZWNyYWZ0Lm5ldC90ZXh0dXJlL2U4ZjJjNTE0ZDBlMTE4MmQxZTk5ZTg5ZGM2ODA0MDEwNjdlNGJjOTgxMTM2Mzc2ZTY3YmQ1YmY3MTdkNmZhYWEiCiAgICB9LAogICAgIkNBUEUiIDogewogICAgICAidXJsIiA6ICJodHRwOi8vdGV4dHVyZXMubWluZWNyYWZ0Lm5ldC90ZXh0dXJlLzIzNDBjMGUwM2RkMjRhMTFiMTVhOGIzM2MyYTdlOWUzMmFiYjIwNTFiMjQ4MWQwYmE3ZGVmZDYzNWNhN2E5MzMiCiAgICB9CiAgfQp9=";
+                    }
+                    return petropiaPlayer.getSkinTexture();
+                }
+                @Override
+                public @Nullable String signature() {
+                    if(petropiaPlayer == null){
+                        return null;
+                    } else {
+                        return petropiaPlayer.getSkinTextureSignature();
+                    }
+                }
+            };
+            npc = SpacelifeSpawn.getNpcPlatform().newNpcBuilder()
+                    .flag(Npc.LOOK_AT_PLAYER, true)
+                    .profile(Profile.resolved(
+                            shopID,
+                            UUID.randomUUID(),
+                            Set.of(profileProperty)))
+                    .position(BukkitPlatformUtil.positionFromBukkitLegacy(new Location(Bukkit.getWorld("world"), npcX, npcY, npcZ, npcYaw, npcPitch)))
+                    .buildAndTrack();
+                Location location = new Location(Bukkit.getWorld("world"), npcX, npcY - 0.15, npcZ, npcYaw, npcPitch);
+                tag = location.getWorld().spawn(location, ArmorStand.class);
+                tag.setGravity(false);
+                tag.setCanPickupItems(false);
+                tag.customName(Component.text(name).color(NamedTextColor.GOLD).decorate(TextDecoration.BOLD));
+                tag.setCustomNameVisible(true);
+                tag.setVisible(false);
+            Bukkit.getOnlinePlayers().forEach(player -> {
+                ShopNpcListener.registerScoreboardTeam(player.getScoreboard(), this);
+            });
+        }));
+    }
+
+    public void onDisable(){
+        removeNPC();
+    }
+
+    private void removeNPC(){
+        npc.unlink();
+        tag.remove();
+    }
+
+    public void setNpcLocation(Location location) {
+        this.npcX = location.getX();
+        this.npcY = location.getY();
+        this.npcZ = location.getZ();
+        this.npcYaw = location.getYaw();
+        this.npcPitch = location.getPitch();
+        removeNPC();
+        spawnNPC();
+        ShopDatabase.getInstance().saveShop(this);
+    }
     public void updateSigns(){
         writeSigns();
     }
+
     private void writeSigns(){
         Block block = getSignLocation().getBlock();
         if(!(block.getState() instanceof Sign sign1)){
@@ -220,7 +318,6 @@ public class Shop implements Cloneable {
         }
         return null;
     }
-
     /**
      * Calculate time until the timespamp
      * @param timestamp Timestamp when shp expires
@@ -251,6 +348,7 @@ public class Shop implements Cloneable {
         }
         return secondsRemaining + (secondsRemaining == 1 ? " Sekunde" : " Sekunden");
     }
+
     public UUID getOwner(){
         if(owner == null){
             return null;
@@ -268,6 +366,10 @@ public class Shop implements Cloneable {
 
     public String getShopID(){
         return shopID;
+    }
+
+    public Npc<World, Player, ItemStack, Plugin> getNPC(){
+        return npc;
     }
 
     public List<UUID> getTrustedPlayers(){

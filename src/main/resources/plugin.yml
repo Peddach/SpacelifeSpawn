@@ -27,3 +27,6 @@ permissions:
   spacelifespawn.command.shop.edit:
     description: "Edit a shop"
     default: false
+  spacelifespawn.command.shop.clear:
+    description: "Edit a shop"
+    default: false

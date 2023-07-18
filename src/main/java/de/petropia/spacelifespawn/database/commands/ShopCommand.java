@@ -71,8 +71,10 @@ public class ShopCommand implements CommandExecutor, TabCompleter {
                     continue;
                 }
                 new ShopEditGui(player, shop);
+                return true;
             }
             SpacelifeSpawn.getInstance().getMessageUtil().sendMessage(player, Component.text("Dieser Shop gehört nicht dir oder du bist kein Mitglied!", NamedTextColor.RED));
+            return false;
         }
         if(args.length >= 1 && args[0].equalsIgnoreCase("add")){
             if(!player.hasPermission("spacelifespawn.command.shop.add")){
@@ -148,6 +150,30 @@ public class ShopCommand implements CommandExecutor, TabCompleter {
             player.teleport(shop.getSignLocation());
             return true;
         }
+        if(args.length == 1 && args[0].equalsIgnoreCase("clear")){
+            if(!player.hasPermission("spacelifespawn.command.shop.clar")){
+                SpacelifeSpawn.getInstance().getMessageUtil().sendMessage(player, Component.text("Keine Rechte!", NamedTextColor.RED));
+                return false;
+            }
+            Location loc = player.getLocation();
+            int x = loc.getBlockX();
+            int y = loc.getBlockY();
+            int z = loc.getBlockZ();
+            for(Shop shop : ShopRegistry.getShops()){
+                if(!shop.isInShop(x, y, z)){
+                    continue;
+                }
+                if(!shop.isRented()){
+                    SpacelifeSpawn.getInstance().getMessageUtil().sendMessage(player, Component.text("Dieser Shop ist nicht vermietet", NamedTextColor.RED));
+                    return false;
+                }
+                shop.unrent();
+                SpacelifeSpawn.getInstance().getMessageUtil().sendMessage(player, Component.text("Shop gecleared", NamedTextColor.RED));
+                return true;
+            }
+            SpacelifeSpawn.getInstance().getMessageUtil().sendMessage(player, Component.text("Du befindest dich in keinem Shop", NamedTextColor.RED));
+            return false;
+        }
         SpacelifeSpawn.getInstance().getMessageUtil().sendMessage(player, Component.text("Bitte gib ein Argument an!", NamedTextColor.RED));
         return false;
     }
@@ -200,6 +226,9 @@ public class ShopCommand implements CommandExecutor, TabCompleter {
             }
             if(player.hasPermission("spacelifespawn.command.shop.edit")){
                 completions.add("edit");
+            }
+            if(player.hasPermission("spacelifespawn.command.shop.clear")){
+                completions.add("clear");
             }
         }
         if(args.length == 2 && args[0].equalsIgnoreCase("tp")){

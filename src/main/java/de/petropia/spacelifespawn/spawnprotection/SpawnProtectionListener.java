@@ -10,6 +10,7 @@ import org.bukkit.event.Listener;
 import org.bukkit.event.block.*;
 import org.bukkit.event.entity.EntityExplodeEvent;
 import org.bukkit.event.entity.EntityInteractEvent;
+import org.bukkit.event.player.PlayerArmorStandManipulateEvent;
 import org.bukkit.event.player.PlayerBucketEmptyEvent;
 import org.bukkit.event.player.PlayerBucketFillEvent;
 
@@ -36,6 +37,15 @@ public class SpawnProtectionListener implements Listener {
             return;
         }
         event.setCancelled(true);
+    }
+
+    @EventHandler
+    public void manipulate(PlayerArmorStandManipulateEvent e)
+    {
+        if(!e.getRightClicked().isVisible())
+        {
+            e.setCancelled(true);
+        }
     }
 
     @EventHandler

@@ -28,6 +28,7 @@ public class ShopEditGui {
                 .title(Component.text(shop.getName(), NamedTextColor.GREEN).decorate(TextDecoration.BOLD))
                 .create();
         gui.setItem(17, createShopDeleteItem());
+        gui.setItem(9, createNpcLocationItem());
         gui.open(player);
     }
 
@@ -55,6 +56,31 @@ public class ShopEditGui {
                     event.getWhoClicked().playSound(Sound.sound(org.bukkit.Sound.ENTITY_ENDER_DRAGON_DEATH, Sound.Source.MASTER, 1.2F, 0.8F));
                     SpacelifeSpawn.getInstance().getMessageUtil().sendMessage(player, Component.text("Dein Shop wurde aufgelöst!", NamedTextColor.DARK_RED));
                     shop.unrent();
+                });
+    }
+
+    private GuiItem createNpcLocationItem(){
+        Component title = Component.text("NPC versetzten", NamedTextColor.RED).decorate(TextDecoration.BOLD);
+        Component lore1 = Component.text("Klicke um den Verkäufer in deinem Shop", NamedTextColor.GRAY);
+        Component lore2 = Component.text("an deine aktuelle Stelle zu setzen", NamedTextColor.GRAY);
+        return ItemBuilder.from(Material.LIGHTNING_ROD)
+                .name(title)
+                .lore(
+                        Component.empty(),
+                        lore1,
+                        lore2,
+                        Component.empty()
+                )
+                .flags(ItemFlag.HIDE_ATTRIBUTES)
+                .asGuiItem(event -> {
+                    event.getWhoClicked().closeInventory(InventoryCloseEvent.Reason.PLUGIN);
+                    event.getWhoClicked().playSound(Sound.sound(org.bukkit.Sound.ENTITY_EXPERIENCE_ORB_PICKUP, Sound.Source.MASTER, 1F, 1.1F));
+                    if(!shop.isInShop(player.getLocation().getBlockX(), player.getLocation().getBlockY(), player.getLocation().getBlockZ())){
+                        SpacelifeSpawn.getInstance().getMessageUtil().sendMessage(player, Component.text("Der Verkäufer kann nur in deinem Shop gesetzt werden!", NamedTextColor.RED));
+                        return;
+                    }
+                    SpacelifeSpawn.getInstance().getMessageUtil().sendMessage(player, Component.text("Der Verkäufer wurde umgesetzt!", NamedTextColor.GREEN));
+                    shop.setNpcLocation(player.getLocation());
                 });
     }
 
