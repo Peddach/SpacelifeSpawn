@@ -19,17 +19,13 @@ import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.format.TextColor;
 import net.kyori.adventure.text.format.TextDecoration;
 import org.bson.types.ObjectId;
-import org.bukkit.Bukkit;
-import org.bukkit.Location;
-import org.bukkit.Material;
-import org.bukkit.World;
+import org.bukkit.*;
 import org.bukkit.block.Block;
 import org.bukkit.block.Sign;
 import org.bukkit.entity.ArmorStand;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.plugin.Plugin;
-import org.bukkit.scoreboard.Scoreboard;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -184,6 +180,7 @@ public class Shop implements Cloneable {
                 for (int z = minZ; z <= maxZ; z++) {
                     Block block = Bukkit.getWorld("world").getBlockAt(x, y, z);
                     block.setType(Material.AIR, false);
+                    block.getWorld().spawnParticle(Particle.CAMPFIRE_COSY_SMOKE, block.getLocation(), 4, 0.5, 0.5, 0.5);
                 }
             }
         }
@@ -235,9 +232,7 @@ public class Shop implements Cloneable {
                 tag.customName(Component.text(name).color(NamedTextColor.GOLD).decorate(TextDecoration.BOLD));
                 tag.setCustomNameVisible(true);
                 tag.setVisible(false);
-            Bukkit.getOnlinePlayers().forEach(player -> {
-                ShopNpcListener.registerScoreboardTeam(player.getScoreboard(), this);
-            });
+            Bukkit.getOnlinePlayers().forEach(player -> ShopNpcListener.registerScoreboardTeam(player.getScoreboard(), this));
         }));
     }
 
@@ -246,8 +241,12 @@ public class Shop implements Cloneable {
     }
 
     private void removeNPC(){
-        npc.unlink();
-        tag.remove();
+        if(npc != null) {
+            npc.unlink();
+        }
+        if(tag != null){
+            tag.remove();
+        }
     }
 
     public void setNpcLocation(Location location) {
