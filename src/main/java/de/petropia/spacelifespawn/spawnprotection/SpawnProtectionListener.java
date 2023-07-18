@@ -10,9 +10,11 @@ import org.bukkit.event.Listener;
 import org.bukkit.event.block.*;
 import org.bukkit.event.entity.EntityExplodeEvent;
 import org.bukkit.event.entity.EntityInteractEvent;
+import org.bukkit.event.entity.EntitySpawnEvent;
 import org.bukkit.event.player.PlayerArmorStandManipulateEvent;
 import org.bukkit.event.player.PlayerBucketEmptyEvent;
 import org.bukkit.event.player.PlayerBucketFillEvent;
+import org.bukkit.event.player.PlayerInteractEvent;
 
 public class SpawnProtectionListener implements Listener {
 
@@ -21,6 +23,22 @@ public class SpawnProtectionListener implements Listener {
         if(isPlayerPermittedToEdit(event.getBlock().getLocation(), event.getPlayer())){
             return;
         }
+        event.setCancelled(true);
+    }
+
+    @EventHandler
+    public void playerInteractlistener(PlayerInteractEvent event){
+        if(event.getInteractionPoint() == null){
+            return;
+        }
+        if(isPlayerPermittedToEdit(event.getInteractionPoint(), event.getPlayer())){
+            return;
+        }
+        event.setCancelled(true);
+    }
+
+    @EventHandler
+    public void onEntitySpawn(EntitySpawnEvent event){
         event.setCancelled(true);
     }
 
