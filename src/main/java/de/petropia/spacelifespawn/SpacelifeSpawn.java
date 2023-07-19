@@ -2,6 +2,7 @@ package de.petropia.spacelifespawn;
 
 import com.github.juliarn.npclib.api.NpcActionController;
 import com.github.juliarn.npclib.api.Platform;
+import com.github.juliarn.npclib.api.event.InteractNpcEvent;
 import com.github.juliarn.npclib.api.event.ShowNpcEvent;
 import com.github.juliarn.npclib.bukkit.BukkitPlatform;
 import com.github.juliarn.npclib.bukkit.BukkitVersionAccessor;
@@ -48,6 +49,7 @@ public class SpacelifeSpawn extends PetropiaPlugin {
                 .worldAccessor(BukkitWorldAccessor.nameBasedAccessor())
                 .build();
         npcPlatform.eventBus().subscribe(ShowNpcEvent.Post.class, event -> new ShopNpcListener().handleNpcShow(event));
+        npcPlatform.eventBus().subscribe(InteractNpcEvent.class, event -> new ShopNpcListener().handlNpcClick(event));
     }
 
     @Override

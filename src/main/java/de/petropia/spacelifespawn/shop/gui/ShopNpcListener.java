@@ -1,10 +1,13 @@
 package de.petropia.spacelifespawn.shop.gui;
 
+import com.github.juliarn.npclib.api.event.InteractNpcEvent;
 import com.github.juliarn.npclib.api.event.ShowNpcEvent;
 import com.github.juliarn.npclib.api.protocol.enums.EntityAnimation;
 import com.github.juliarn.npclib.api.protocol.meta.EntityMetadataFactory;
+import de.petropia.spacelifespawn.SpacelifeSpawn;
 import de.petropia.spacelifespawn.shop.Shop;
 import de.petropia.spacelifespawn.shop.ShopRegistry;
+import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
@@ -19,6 +22,21 @@ public class ShopNpcListener implements Listener {
     public void handleNpcShow(ShowNpcEvent.Post event) {
         event.npc().platform().packetFactory().createEntityMetaPacket(EntityMetadataFactory.skinLayerMetaFactory(), true).schedule((Player) event.player(), event.npc());
         event.npc().platform().packetFactory().createAnimationPacket(EntityAnimation.SWING_MAIN_ARM).schedule((Player) event.player(), event.npc());
+    }
+
+    public void handlNpcClick(InteractNpcEvent event){
+        Player player = event.player();
+        Bukkit.getScheduler().runTask(SpacelifeSpawn.getInstance(), () -> {
+            for(Shop shop : ShopRegistry.getShops()){
+                if(!shop.isRented()){
+                    continue;
+                }
+                if(shop.isInShop(player.getLocation().getBlockX(), player.getLocation().getBlockY(), player.getLocation().getBlockZ())){
+                    new ShopBuyGui(player, shop);
+                }
+                return;
+            }
+        });
     }
 
     @EventHandler(priority = EventPriority.MONITOR)

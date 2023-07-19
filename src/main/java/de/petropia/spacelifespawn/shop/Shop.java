@@ -67,6 +67,7 @@ public class Shop implements Cloneable {
     private double npcZ;
     private float npcPitch;
     private float npcYaw;
+    private List<ShopItem> shopItems;
     /**
      * Constructor for Morphia
      */
@@ -167,6 +168,8 @@ public class Shop implements Cloneable {
         this.rented = false;
         this.rentedUntil = 0;
         this.name = null;
+        this.trustedPlayers = null;
+        this.shopItems = null;
         ShopDatabase.getInstance().saveShop(this);
 
         int minX = Math.min(x1, x2);
@@ -181,7 +184,8 @@ public class Shop implements Cloneable {
                 for (int z = minZ; z <= maxZ; z++) {
                     Block block = Bukkit.getWorld("world").getBlockAt(x, y, z);
                     block.setType(Material.AIR, false);
-                    block.getWorld().spawnParticle(Particle.CAMPFIRE_COSY_SMOKE, block.getLocation(), 4, 0.5, 0.5, 0.5);
+                    block.getWorld().spawnParticle(Particle.CAMPFIRE_COSY_SMOKE, block.getLocation(), 1, 0.5, 0.5, 0.5);
+                    block.getWorld().spawnParticle(Particle.CAMPFIRE_SIGNAL_SMOKE, block.getLocation(), 1, 0.5, 0.5, 0.5);
                 }
             }
         }
@@ -398,6 +402,26 @@ public class Shop implements Cloneable {
         }
     }
 
+    public List<ShopItem> getShopItems(){
+        if(shopItems == null){
+            shopItems = new ArrayList<>();
+        }
+        return new ArrayList<>(shopItems);
+    }
+
+    public void addShopItem(ShopItem item){
+        if(shopItems == null){
+            shopItems = new ArrayList<>();
+        }
+        shopItems.add(item);
+        ShopDatabase.getInstance().saveShop(this);
+    }
+
+    public void removeShopItem(ShopItem item){
+        shopItems.remove(item);
+        ShopDatabase.getInstance().saveShop(this);
+    }
+
     public Location getSignLocation(){
         return new Location(Bukkit.getWorld("world"), signX, singY, signZ);
     }
@@ -409,9 +433,17 @@ public class Shop implements Cloneable {
             if(clone.trustedPlayers != null){
                 clone.trustedPlayers = new ArrayList<>(this.trustedPlayers);
             }
+            if(clone.shopItems != null){
+                clone.shopItems = new ArrayList<>(this.shopItems);
+            }
             return clone;
         } catch (CloneNotSupportedException e) {
             throw new RuntimeException(e);
         }
+    }
+
+    public void buyItemForPlayer(ShopItem item, Player player) {
+        //TODO implement
+        SpacelifeSpawn.getInstance().getMessageUtil().sendMessage(player, Component.text("Item gekauft von " + shopID));
     }
 }

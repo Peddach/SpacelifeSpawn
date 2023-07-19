@@ -91,7 +91,7 @@ public class ShopEditGui {
                         SpacelifeSpawn.getInstance().getMessageUtil().sendMessage(player, Component.text("Nur der Besitzer kann Mitglieder hinzufügen!", NamedTextColor.DARK_RED));
                         return;
                     }
-                    if(shop.getTrustedPlayers().size() > 3){
+                    if(shop.getTrustedPlayers().size() >= 3){
                         SpacelifeSpawn.getInstance().getMessageUtil().sendMessage(player, Component.text("Du kannst nicht mehr als 3 Mitglieder im Shop haben. Entferne zuerst welche!", NamedTextColor.RED));
                         return;
                     }
@@ -103,7 +103,11 @@ public class ShopEditGui {
                                 }
                                 TurtleServer.getMongoDBHandler().getPetropiaPlayerByUsername(name).thenAccept(petropiaPlayer -> Bukkit.getScheduler().runTask(SpacelifeSpawn.getInstance(), () -> {
                                     if(petropiaPlayer == null){
-                                        SpacelifeSpawn.getInstance().getMessageUtil().sendMessage(player, Component.text("Der Spieler " + name + "wurde nicht gefunden", NamedTextColor.RED));
+                                        SpacelifeSpawn.getInstance().getMessageUtil().sendMessage(player, Component.text("Der Spieler " + name + " wurde nicht gefunden", NamedTextColor.RED));
+                                        return;
+                                    }
+                                    if(shop.getTrustedPlayers().contains(UUID.fromString(petropiaPlayer.getUuid()))){
+                                        SpacelifeSpawn.getInstance().getMessageUtil().sendMessage(player, Component.text("Der Spieler " + name + " ist bereits Mitglied des Shops", NamedTextColor.RED));
                                         return;
                                     }
                                     shop.addTrustedPlayer(UUID.fromString(petropiaPlayer.getUuid()));

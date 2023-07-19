@@ -15,6 +15,7 @@ import org.bukkit.block.Block;
 import org.bukkit.block.Sign;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
+import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerInteractEvent;
 
@@ -28,7 +29,7 @@ public class ShopRentListener implements Listener {
 
     private static final List<Shop> shopsInRentingProcess = new ArrayList<>();
 
-    @EventHandler(ignoreCancelled = true)
+    @EventHandler(ignoreCancelled = true, priority = EventPriority.LOWEST)
     public void onSignClick(PlayerInteractEvent event){
         if(!event.getAction().isRightClick()){
             return;
