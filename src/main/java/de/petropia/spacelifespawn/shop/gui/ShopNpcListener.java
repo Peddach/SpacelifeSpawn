@@ -33,8 +33,8 @@ public class ShopNpcListener implements Listener {
                 }
                 if(shop.isInShop(player.getLocation().getBlockX(), player.getLocation().getBlockY(), player.getLocation().getBlockZ())){
                     new ShopBuyGui(player, shop);
+                    return;
                 }
-                return;
             }
         });
     }

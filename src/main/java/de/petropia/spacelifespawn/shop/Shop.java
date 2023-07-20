@@ -5,6 +5,7 @@ import com.github.juliarn.npclib.api.profile.Profile;
 import com.github.juliarn.npclib.api.profile.ProfileProperty;
 import com.github.juliarn.npclib.bukkit.util.BukkitPlatformUtil;
 import de.petropia.spacelifeCore.player.SpacelifeDatabase;
+import de.petropia.spacelifeCore.player.SpacelifePlayer;
 import de.petropia.spacelifeCore.warp.Warp;
 import de.petropia.spacelifespawn.SpacelifeSpawn;
 import de.petropia.spacelifespawn.database.ShopDatabase;
@@ -20,10 +21,10 @@ import net.kyori.adventure.text.format.TextColor;
 import net.kyori.adventure.text.format.TextDecoration;
 import org.bson.types.ObjectId;
 import org.bukkit.*;
-import org.bukkit.block.Block;
-import org.bukkit.block.Sign;
+import org.bukkit.block.*;
 import org.bukkit.entity.ArmorStand;
 import org.bukkit.entity.Player;
+import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.plugin.Plugin;
 import org.jetbrains.annotations.NotNull;
@@ -68,6 +69,7 @@ public class Shop implements Cloneable {
     private float npcPitch;
     private float npcYaw;
     private List<ShopItem> shopItems;
+    private double money;
     /**
      * Constructor for Morphia
      */
@@ -422,8 +424,111 @@ public class Shop implements Cloneable {
         ShopDatabase.getInstance().saveShop(this);
     }
 
+    public void buyItemForPlayer(ShopItem shopItem, Player player) {
+        if(player.getInventory().firstEmpty() == -1){
+            SpacelifeSpawn.getInstance().getMessageUtil().sendMessage(player, Component.text("Dein Inventar ist voll!", NamedTextColor.RED));
+            return;
+        }
+        SpacelifePlayer spacelifePlayer = SpacelifeDatabase.getInstance().getCachedPlayer(player.getUniqueId());
+        if(spacelifePlayer.getMoney() < shopItem.getBuyPrice()){
+            SpacelifeSpawn.getInstance().getMessageUtil().sendMessage(player, Component.text("Du hast nicht genug Geld!" , NamedTextColor.RED));
+            return;
+        }
+        int minX = Math.min(x1, x2);
+        int minY = Math.min(y1, y2);
+        int minZ = Math.min(z1, z2);
+        int maxX = Math.max(x1, x2);
+        int maxY = Math.max(y1, y2);
+        int maxZ = Math.max(z1, z2);
+
+        final int amount = shopItem.getItem().getAmount();
+        ItemStack searchItem = shopItem.getItem();
+
+        List<SearchResult> results = new ArrayList<>();
+        int currentAmount = 0;
+        for (int x = minX; x <= maxX; x++) {
+            for (int y = minY; y <= maxY; y++) {
+                for (int z = minZ; z <= maxZ; z++) {
+                    if(currentAmount >= amount){
+                        break;
+                    }
+                    Block block = Bukkit.getWorld("world").getBlockAt(x, y, z);
+                    if(block.getState() instanceof Chest || block.getState() instanceof Barrel){
+                        Inventory inventory = null;
+                        if(block.getState() instanceof Chest chest){
+                            inventory = chest.getBlockInventory();
+                        }
+                        if(block.getState() instanceof Barrel chest){
+                            inventory = chest.getInventory();
+                        }
+                        for(int i = 0; i < inventory.getSize(); i++){
+                            ItemStack item = inventory.getItem(i);
+                            if(item == null){
+                                continue;
+                            }
+                            if(!item.isSimilar(searchItem)){
+                                continue;
+                            }
+                            currentAmount += item.getAmount();
+                            results.add(new SearchResult(item, block.getLocation(), i));
+                        }
+                    }
+                }
+            }
+        }
+        if(currentAmount < amount){
+            SpacelifeSpawn.getInstance().getMessageUtil().sendMessage(player, Component.text("Dieses Item ist ausverkauft oder in der Menge nicht mehr verfügar", NamedTextColor.RED));
+            return;
+        }
+        if(!spacelifePlayer.subtractMoney(shopItem.getBuyPrice())){
+            SpacelifeSpawn.getInstance().getMessageUtil().sendMessage(player, Component.text("Transaktionsfehler", NamedTextColor.RED));
+            return;
+        }
+        money += shopItem.getBuyPrice();
+        ShopDatabase.getInstance().saveShop(this);
+        int amountRemoved = 0;
+        for (SearchResult result : results) {
+            if (amountRemoved >= amount) {
+                break;
+            }
+            Block block = result.location().getBlock();
+            if (!(block.getState() instanceof Container container)) {
+                continue;
+            }
+            Inventory inventory = container.getSnapshotInventory();
+            if (result.itemStack().getAmount() <= amount - amountRemoved) {
+                int removeAmount = result.itemStack().getAmount();
+                inventory.setItem(result.slot(), null);
+                container.update(false, false);
+                amountRemoved += removeAmount;
+                continue;
+            }
+            if (inventory.getItem(result.slot()) == null) {
+                continue;
+            }
+            ItemStack chestItem = inventory.getItem(result.slot()).clone();
+            int chestItemAmount = chestItem.getAmount();
+            int removeAmount = Math.min(chestItemAmount, amount - amountRemoved);
+            chestItem.setAmount(chestItemAmount - removeAmount);
+            amountRemoved += removeAmount;
+            container.getSnapshotInventory().setItem(result.slot(), chestItem);
+            container.update(false, false);
+        }
+        player.getInventory().addItem(shopItem.getItem().clone());
+        player.playSound(net.kyori.adventure.sound.Sound.sound(org.bukkit.Sound.ENTITY_PLAYER_LEVELUP, net.kyori.adventure.sound.Sound.Source.MASTER, 1F, 1F));
+    }
+
     public Location getSignLocation(){
         return new Location(Bukkit.getWorld("world"), signX, singY, signZ);
+    }
+
+    public double getMoney(){
+        return money;
+    }
+
+    public void setMoney(double money){
+        this.money = money;
+        ShopDatabase.getInstance().saveShop(this);
     }
 
     @Override
@@ -442,8 +547,5 @@ public class Shop implements Cloneable {
         }
     }
 
-    public void buyItemForPlayer(ShopItem item, Player player) {
-        //TODO implement
-        SpacelifeSpawn.getInstance().getMessageUtil().sendMessage(player, Component.text("Item gekauft von " + shopID));
-    }
+    private record SearchResult(ItemStack itemStack, Location location, int slot) {}
 }

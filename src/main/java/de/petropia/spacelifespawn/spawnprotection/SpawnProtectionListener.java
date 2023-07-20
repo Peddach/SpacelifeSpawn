@@ -6,14 +6,12 @@ import de.petropia.spacelifespawn.shop.ShopRegistry;
 import io.papermc.paper.event.player.PlayerFlowerPotManipulateEvent;
 import org.bukkit.Location;
 import org.bukkit.Material;
+import org.bukkit.block.Container;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
-import org.bukkit.event.block.BlockBreakEvent;
-import org.bukkit.event.block.BlockPistonExtendEvent;
-import org.bukkit.event.block.BlockPistonRetractEvent;
-import org.bukkit.event.block.BlockPlaceEvent;
+import org.bukkit.event.block.*;
 import org.bukkit.event.entity.EntityDamageEvent;
 import org.bukkit.event.entity.EntityExplodeEvent;
 import org.bukkit.event.entity.EntityInteractEvent;
@@ -21,6 +19,7 @@ import org.bukkit.event.player.PlayerArmorStandManipulateEvent;
 import org.bukkit.event.player.PlayerBucketEmptyEvent;
 import org.bukkit.event.player.PlayerBucketFillEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
+import org.bukkit.event.world.StructureGrowEvent;
 
 import java.util.List;
 
@@ -51,17 +50,18 @@ public class SpawnProtectionListener implements Listener {
         if(forbiddenMats.contains(material)){
             event.setCancelled(true);
         }
-        if(event.isBlockInHand()){ //event is Blockplacement and should be handled by the BlockPlaceEvent
-            return;
-        }
         if(event.getInteractionPoint() == null){
             return;
         }
-        if(isPlayerPermittedToEdit(event.getInteractionPoint(), event.getPlayer())){
-            return;
+        if(event.getInteractionPoint().getBlock().getType().toString().contains("DOOR") && !isPlayerPermittedToEdit(event.getInteractionPoint(), event.getPlayer())){
+            event.setCancelled(true);
         }
-        event.setCancelled(true);
+        if(event.getInteractionPoint().getBlock().getState() instanceof Container && !isPlayerPermittedToEdit(event.getInteractionPoint(), event.getPlayer())){
+            event.setCancelled(true);
+        }
     }
+
+
 
     @EventHandler
     public void onPlayerDamage(EntityDamageEvent event){
@@ -72,6 +72,26 @@ public class SpawnProtectionListener implements Listener {
         if(event.getCause().equals(EntityDamageEvent.DamageCause.VOID)){
             player.teleport(StaticTeleportPoints.SPAWN.convertToBukkitLocation());
         }
+    }
+
+    @EventHandler
+    public void onPlantGrow(BlockGrowEvent event){
+        event.setCancelled(true);
+    }
+
+    @EventHandler
+    public void onPlantGrow(StructureGrowEvent event){
+        event.setCancelled(true);
+    }
+
+    @EventHandler
+    public void onPlantSpread(BlockSpreadEvent event){
+        event.setCancelled(true);
+    }
+
+    @EventHandler
+    public void onBlockForm(BlockFormEvent event){
+        event.setCancelled(true);
     }
 
     @EventHandler

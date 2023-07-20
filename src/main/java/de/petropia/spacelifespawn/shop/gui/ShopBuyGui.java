@@ -1,5 +1,7 @@
 package de.petropia.spacelifespawn.shop.gui;
 
+import de.petropia.spacelifeCore.player.SpacelifeDatabase;
+import de.petropia.spacelifeCore.player.SpacelifePlayer;
 import de.petropia.spacelifespawn.SpacelifeSpawn;
 import de.petropia.spacelifespawn.shop.Shop;
 import de.petropia.spacelifespawn.shop.ShopItem;
@@ -12,6 +14,7 @@ import net.kyori.adventure.sound.Sound;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.format.TextDecoration;
+import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemFlag;
@@ -35,11 +38,13 @@ public class ShopBuyGui {
                 .rows(5)
                 .pageSize(36)
                 .create();
-        gui.setItem(38, createPreviousItem());
+        gui.setItem(37, createPreviousItem());
         if(shop.getOwner().equals(player.getUniqueId()) || shop.getTrustedPlayers().contains(player.getUniqueId())){
+            gui.setItem(39, createShopEditItem());
             gui.setItem(40, createItemAddItem());
+            gui.setItem(41, createMoneyWithdrawItem());
         }
-        gui.setItem(42, createNextItem());
+        gui.setItem(43, createNextItem());
         addItems();
         gui.open(player);
     }
@@ -90,7 +95,6 @@ public class ShopBuyGui {
                         }
                         if(event.isLeftClick()){
                             shop.buyItemForPlayer(item, player);
-                            player.playSound(Sound.sound(org.bukkit.Sound.ENTITY_PLAYER_LEVELUP, Sound.Source.MASTER, 1F, 1F));
                         }
                     })
             );
@@ -98,13 +102,15 @@ public class ShopBuyGui {
     }
 
     private GuiItem createItemAddItem(){
-        Component title = Component.text("Item zum Shop hinzufüge", NamedTextColor.GREEN).decorate(TextDecoration.BOLD);
-        Component lore = Component.text("Fügt ein Item zum verkauf hinzu. Dieses sollte in einer Kiste in deinem Shop verfügbar sein.", NamedTextColor.GRAY);
+        Component title = Component.text("Item zum Shop hinzufügen", NamedTextColor.GREEN).decorate(TextDecoration.BOLD);
+        Component lore1 = Component.text("Fügt ein Item zum verkauf hinzu. Dieses sollte", NamedTextColor.GRAY);
+        Component lore2 = Component.text("in einer Kiste in deinem Shop verfügbar sein.", NamedTextColor.GRAY);
         return ItemBuilder.from(Material.DIAMOND)
                 .name(title)
                 .lore(
                         Component.empty(),
-                        lore,
+                        lore1,
+                        lore2,
                         Component.empty()
                 )
                 .flags(ItemFlag.HIDE_ATTRIBUTES)
@@ -123,6 +129,50 @@ public class ShopBuyGui {
                                SpacelifeSpawn.getInstance().getMessageUtil().sendMessage(player, Component.text("Das Item wurde hinzugefügt", NamedTextColor.GREEN));
                            })
                            .build();
+                });
+    }
+
+    private GuiItem createShopEditItem(){
+        return ItemBuilder.from(Material.REPEATER)
+                .flags(ItemFlag.HIDE_ATTRIBUTES)
+                .lore(
+                        Component.empty(),
+                        Component.text("Passe die Einstellungen deines Shops an.", NamedTextColor.GRAY),
+                        Component.text("Diese können auch mit /shop edit erreicht werden.", NamedTextColor.GRAY),
+                        Component.empty()
+                )
+                .name(Component.text("Einstellungen").color(NamedTextColor.GOLD).decorate(TextDecoration.BOLD))
+                .asGuiItem(event -> {
+                    event.getWhoClicked().closeInventory();
+                    Bukkit.getScheduler().runTaskLater(SpacelifeSpawn.getInstance(), () -> new ShopEditGui(player, shop), 1);
+                });
+    }
+
+    private GuiItem createMoneyWithdrawItem(){
+        return ItemBuilder.from(Material.SUNFLOWER)
+                .flags(ItemFlag.HIDE_ATTRIBUTES)
+                .lore(
+                        Component.empty(),
+                        Component.text("Hebe dein Geld aus dem Shop ab.", NamedTextColor.GRAY),
+                        Component.empty(),
+                        Component.text("Aktuelles Guthaben: ", NamedTextColor.GRAY).append(Component.text(shop.getMoney()).color(NamedTextColor.GOLD)),
+                        Component.empty()
+                )
+                .name(Component.text("Geld abheben").color(NamedTextColor.GOLD).decorate(TextDecoration.BOLD))
+                .asGuiItem(event -> {
+                    event.getWhoClicked().closeInventory();
+                    if(shop.getMoney() == 0D){
+                        SpacelifeSpawn.getInstance().getMessageUtil().sendMessage(player, Component.text("Du musst erst geld verdienen um dir welches auszalen zu lassen!", NamedTextColor.RED));
+                        return;
+                    }
+                    SpacelifeSpawn.getInstance().getMessageUtil().sendMessage(player,
+                            Component.text("Du hast ",NamedTextColor.GRAY)
+                                    .append(Component.text(shop.getMoney() + "$", NamedTextColor.GOLD))
+                                    .append(Component.text(" erhalten", NamedTextColor.GRAY)));
+                    SpacelifePlayer spacelifePlayer = SpacelifeDatabase.getInstance().getCachedPlayer(player.getUniqueId());
+                    spacelifePlayer.addMoney(shop.getMoney());
+                    shop.setMoney(0);
+                    player.playSound(Sound.sound(org.bukkit.Sound.ITEM_GOAT_HORN_SOUND_1, Sound.Source.MASTER, 1.5F, 1.15F));
                 });
     }
 }
