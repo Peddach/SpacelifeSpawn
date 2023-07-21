@@ -6,10 +6,13 @@ import com.github.juliarn.npclib.api.profile.ProfileProperty;
 import com.github.juliarn.npclib.bukkit.util.BukkitPlatformUtil;
 import de.petropia.spacelifeCore.player.SpacelifeDatabase;
 import de.petropia.spacelifeCore.player.SpacelifePlayer;
+import de.petropia.spacelifeCore.scoreboard.ScoreboardElementRegistry;
 import de.petropia.spacelifeCore.warp.Warp;
 import de.petropia.spacelifespawn.SpacelifeSpawn;
 import de.petropia.spacelifespawn.database.ShopDatabase;
 import de.petropia.spacelifespawn.shop.gui.ShopNpcListener;
+import de.petropia.spacelifespawn.shop.scoreboard.ShopNameScoreboardElement;
+import de.petropia.spacelifespawn.shop.scoreboard.ShopOwnerScoreboardElement;
 import de.petropia.turtleServer.server.TurtleServer;
 import dev.morphia.annotations.Entity;
 import dev.morphia.annotations.Id;
@@ -27,6 +30,7 @@ import org.bukkit.entity.Player;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.plugin.Plugin;
+import org.bukkit.util.BoundingBox;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -195,6 +199,8 @@ public class Shop implements Cloneable {
 
     protected void onLoad(){
         writeSigns();
+        ScoreboardElementRegistry.registerElement(new ShopOwnerScoreboardElement(this));
+        ScoreboardElementRegistry.registerElement(new ShopNameScoreboardElement(this));
         if(rented){
            spawnNPC();
         }
@@ -599,6 +605,10 @@ public class Shop implements Cloneable {
         } catch (CloneNotSupportedException e) {
             throw new RuntimeException(e);
         }
+    }
+
+    public BoundingBox getBoundingBox(){
+        return new BoundingBox(x1, y1, z1, x2, y2, z2);
     }
 
     private record SearchResult(ItemStack itemStack, Location location, int slot) {}
