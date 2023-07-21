@@ -1,2 +1,8 @@
 shopCost: 1300
 weeksToRend: 1
+Farmwelt:
+  x1: -35
+  z1: -5
+  x2: -33
+  z2: -3
+FarmweltTask: "SL_Farmwelt"

@@ -9,6 +9,7 @@ import com.github.juliarn.npclib.bukkit.BukkitVersionAccessor;
 import com.github.juliarn.npclib.bukkit.BukkitWorldAccessor;
 import de.petropia.spacelifespawn.database.ShopDatabase;
 import de.petropia.spacelifespawn.database.commands.ShopCommand;
+import de.petropia.spacelifespawn.portal.FarmworldPortalListener;
 import de.petropia.spacelifespawn.shop.Shop;
 import de.petropia.spacelifespawn.shop.ShopRegistry;
 import de.petropia.spacelifespawn.shop.ShopRentListener;
@@ -37,6 +38,7 @@ public class SpacelifeSpawn extends PetropiaPlugin {
         getServer().getPluginManager().registerEvents(new SpawnProtectionListener(), this);
         getServer().getPluginManager().registerEvents(new ShopRentListener(), this);
         getServer().getPluginManager().registerEvents(new ShopNpcListener(), this);
+        getServer().getPluginManager().registerEvents(new FarmworldPortalListener(), this);
         this.getCommand("shop").setExecutor(new ShopCommand());
         this.getCommand("shop").setTabCompleter(new ShopCommand());
         npcPlatform = BukkitPlatform.bukkitNpcPlatformBuilder()

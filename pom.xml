@@ -10,13 +10,17 @@
 
     <repositories>
         <repository>
+            <id>papermc</id>
+            <url>https://repo.papermc.io/repository/maven-public/</url>
+        </repository>
+        <repository>
             <id>petropia</id>
             <name>Petropia Maven Repo</name>
             <url>https://repo.petropia.net/releases</url>
         </repository>
         <repository>
-            <id>papermc</id>
-            <url>https://repo.papermc.io/repository/maven-public/</url>
+            <id>cloudnet-releases</id>
+            <url>https://repo.cloudnetservice.eu/repository/releases/</url>
         </repository>
         <repository>
             <id>derklaro</id>
@@ -46,6 +50,18 @@
             <artifactId>npc-lib-bukkit</artifactId>
             <version>3.0.0-beta5</version>
             <scope>compile</scope>
+        </dependency>
+        <dependency>
+            <groupId>de.dytanic.cloudnet</groupId>
+            <artifactId>cloudnet-driver</artifactId>
+            <version>3.4.5-RELEASE</version>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>de.dytanic.cloudnet</groupId>
+            <artifactId>cloudnet-bridge</artifactId>
+            <version>3.4.5-RELEASE</version>
+            <scope>provided</scope>
         </dependency>
     </dependencies>
     <build>
