@@ -518,6 +518,60 @@ public class Shop implements Cloneable {
         player.playSound(net.kyori.adventure.sound.Sound.sound(org.bukkit.Sound.ENTITY_PLAYER_LEVELUP, net.kyori.adventure.sound.Sound.Source.MASTER, 1F, 1F));
     }
 
+    public void sellItemForPlayer(Player player, ShopItem shopItem){
+        if(shopItem.getSellPrice() < 0D){
+            SpacelifeSpawn.getInstance().getMessageUtil().sendMessage(player, Component.text("Dieser shop kauft das Item nicht an", NamedTextColor.RED));
+            return;
+        }
+        ItemStack itemStack = shopItem.getItem().clone();
+        if(!player.getInventory().containsAtLeast(itemStack, itemStack.getAmount())){
+            SpacelifeSpawn.getInstance().getMessageUtil().sendMessage(player, Component.text("Du hast nicht genug Items zum verkaufen!"));
+            return;
+        }
+        if(money < shopItem.getSellPrice()){
+            SpacelifeSpawn.getInstance().getMessageUtil().sendMessage(player, Component.text("Der Shop hat nicht genug Geld", NamedTextColor.RED));
+            return;
+        }
+        int minX = Math.min(x1, x2);
+        int minY = Math.min(y1, y2);
+        int minZ = Math.min(z1, z2);
+        int maxX = Math.max(x1, x2);
+        int maxY = Math.max(y1, y2);
+        int maxZ = Math.max(z1, z2);
+        boolean success = false;
+        for (int x = minX; x <= maxX; x++) {
+            for (int y = minY; y <= maxY; y++) {
+                for (int z = minZ; z <= maxZ; z++) {
+                    if(success){
+                        break;
+                    }
+                    Block block = Bukkit.getWorld("world").getBlockAt(x, y, z);
+                    if(!(block.getState() instanceof Chest || block.getState() instanceof Barrel)){
+                        continue;
+                    }
+                    Container container = (Container) block.getState();
+                    if(container.getSnapshotInventory().firstEmpty() == -1){
+                        continue;
+                    }
+                    container.getSnapshotInventory().addItem(itemStack);
+                    container.update(false, false);
+                    success = true;
+                }
+            }
+        }
+        if(!success){
+            SpacelifeSpawn.getInstance().getMessageUtil().sendMessage(player, Component.text("Der shop hat kein Platz für weitere Items!", NamedTextColor.RED));
+            return;
+        }
+        SpacelifePlayer spacelifePlayer = SpacelifeDatabase.getInstance().getCachedPlayer(player.getUniqueId());
+        player.getInventory().removeItem(itemStack);
+        spacelifePlayer.addMoney(shopItem.getSellPrice());
+        money -= shopItem.getSellPrice();
+        ShopDatabase.getInstance().saveShop(this);
+        player.playSound(net.kyori.adventure.sound.Sound.sound(org.bukkit.Sound.ENTITY_PLAYER_LEVELUP, net.kyori.adventure.sound.Sound.Source.MASTER, 1F, 1F));
+
+    }
+
     public Location getSignLocation(){
         return new Location(Bukkit.getWorld("world"), signX, singY, signZ);
     }

@@ -13,6 +13,7 @@ public class ShopItem {
 
     private String stringRepresentation;
     private double buyPrice;
+    private double sellPrice;
 
     /**
      * Morphia Constructor
@@ -41,6 +42,22 @@ public class ShopItem {
         this.buyPrice = buyPrice;
     }
 
+    /**
+     * Get the price a shop buys an item for
+     *
+     * @return price as double
+     */
+    public double getSellPrice(){
+        return sellPrice;
+    }
+
+    /**
+     * Set the price a shop buy an item for
+     * @param price price as double. 0 to set not selling
+     */
+    public void setSellPrice(double price){
+        this.sellPrice = price;
+    }
     public ItemStack getItem() {
         if(item == null){
             item = ItemStack.deserializeBytes(fromBase64(stringRepresentation));

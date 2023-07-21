@@ -54,7 +54,7 @@ public class ShopBuyGui {
                 .name(name)
                 .asGuiItem(e -> {
                     gui.previous();
-                    player.playSound(Sound.sound(org.bukkit.Sound.UI_TOAST_OUT, Sound.Source.MASTER, 2F, 0.9F));
+                    player.playSound(Sound.sound(org.bukkit.Sound.UI_TOAST_OUT, Sound.Source.MASTER, 2F, 1.2F));
                 });
     }
 
@@ -64,7 +64,7 @@ public class ShopBuyGui {
                 .name(name)
                 .asGuiItem(e -> {
                     gui.next();
-                    player.playSound(Sound.sound(org.bukkit.Sound.UI_TOAST_IN, Sound.Source.MASTER, 2F, 0.9F));
+                    player.playSound(Sound.sound(org.bukkit.Sound.UI_TOAST_IN, Sound.Source.MASTER, 2F, 1.2F));
                 });
     }
 
@@ -76,11 +76,26 @@ public class ShopBuyGui {
                 lore = new ArrayList<>();
             }
             lore.add(Component.empty());
-            lore.add(Component.text("Preis: ", NamedTextColor.GRAY).append(Component.text(item.getBuyPrice(), NamedTextColor.GOLD)));
+            if(item.getBuyPrice() > 0D){
+                lore.add(Component.text("Verkaufspreis: ", NamedTextColor.GRAY).append(Component.text(item.getBuyPrice(), NamedTextColor.GOLD)));
+            }
+            if(item.getSellPrice() > 0D){
+                lore.add(Component.text("Ankaufspreis: ", NamedTextColor.GRAY).append(Component.text(item.getSellPrice(), NamedTextColor.GOLD)));
+            }
+            lore.add(Component.empty());
             if(!(shop.getOwner().equals(player.getUniqueId()) || shop.getTrustedPlayers().contains(player.getUniqueId()))) {
-                lore.add(Component.text("Linksklick", NamedTextColor.GRAY).append(Component.text(" >> ", NamedTextColor.DARK_GRAY)).append(Component.text("Kaufen", NamedTextColor.GOLD)));
+                if(item.getBuyPrice() > 0D){
+                    lore.add(Component.text("Rechtsklick", NamedTextColor.GRAY).append(Component.text(" >> ", NamedTextColor.DARK_GRAY)).append(Component.text("Kaufen", NamedTextColor.GOLD)));
+                }
+                if(item.getSellPrice() > 0D){
+                    lore.add(Component.text("Linksklick", NamedTextColor.GRAY).append(Component.text(" >> ", NamedTextColor.DARK_GRAY)).append(Component.text("Verkaufen", NamedTextColor.GREEN)));
+                }
+                if(item.getSellPrice() == 0D && item.getBuyPrice() == 0D){
+                    lore.add(Component.text("Kein Preis festgelegt!", NamedTextColor.RED));
+                }
             } else {
                 lore.add(Component.text("Linksklick", NamedTextColor.GRAY).append(Component.text(" >> ", NamedTextColor.DARK_GRAY)).append(Component.text("Item Löschen", NamedTextColor.RED)));
+                lore.add(Component.text("Rechtsklick", NamedTextColor.GRAY).append(Component.text(" >> ", NamedTextColor.DARK_GRAY)).append(Component.text("Bearbeiten", NamedTextColor.GREEN)));
             }
             lore.add(Component.empty());
             bukkitItem.lore(lore);
@@ -93,8 +108,23 @@ public class ShopBuyGui {
                             gui.close(player);
                             return;
                         }
-                        if(event.isLeftClick()){
+                        if(event.isRightClick()  && (shop.getOwner().equals(player.getUniqueId()) || shop.getTrustedPlayers().contains(player.getUniqueId()))){
+                            gui.close(player);
+                            Bukkit.getScheduler().runTaskLater(SpacelifeSpawn.getInstance(), () -> new ShopItemEditGui(player, shop, item), 2);
+                            return;
+                        }
+                        if(event.isRightClick()){
+                            if(item.getBuyPrice() == 0D){
+                                return;
+                            }
                             shop.buyItemForPlayer(item, player);
+                            return;
+                        }
+                        if(event.isLeftClick()){
+                            if(item.getSellPrice() == 0D){
+                                return;
+                            }
+                            shop.sellItemForPlayer(player, item);
                         }
                     })
             );
@@ -153,26 +183,45 @@ public class ShopBuyGui {
                 .flags(ItemFlag.HIDE_ATTRIBUTES)
                 .lore(
                         Component.empty(),
-                        Component.text("Hebe dein Geld aus dem Shop ab.", NamedTextColor.GRAY),
+                        Component.text("Hebe dein Geld aus dem Shop ab oder zahle welche ein.", NamedTextColor.GRAY),
                         Component.empty(),
                         Component.text("Aktuelles Guthaben: ", NamedTextColor.GRAY).append(Component.text(shop.getMoney()).color(NamedTextColor.GOLD)),
+                        Component.empty(),
+                        Component.text("Linksklick", NamedTextColor.GRAY).append(Component.text(" >> ", NamedTextColor.DARK_GRAY)).append(Component.text("Geld auszahlen", NamedTextColor.GREEN)),
+                        Component.text("Rechtsklick", NamedTextColor.GRAY).append(Component.text(" >> ", NamedTextColor.DARK_GRAY)).append(Component.text("Geld einzahlen", NamedTextColor.GOLD)),
                         Component.empty()
                 )
                 .name(Component.text("Geld abheben").color(NamedTextColor.GOLD).decorate(TextDecoration.BOLD))
                 .asGuiItem(event -> {
                     event.getWhoClicked().closeInventory();
-                    if(shop.getMoney() == 0D){
-                        SpacelifeSpawn.getInstance().getMessageUtil().sendMessage(player, Component.text("Du musst erst geld verdienen um dir welches auszalen zu lassen!", NamedTextColor.RED));
-                        return;
-                    }
-                    SpacelifeSpawn.getInstance().getMessageUtil().sendMessage(player,
-                            Component.text("Du hast ",NamedTextColor.GRAY)
-                                    .append(Component.text(shop.getMoney() + "$", NamedTextColor.GOLD))
-                                    .append(Component.text(" erhalten", NamedTextColor.GRAY)));
                     SpacelifePlayer spacelifePlayer = SpacelifeDatabase.getInstance().getCachedPlayer(player.getUniqueId());
-                    spacelifePlayer.addMoney(shop.getMoney());
-                    shop.setMoney(0);
-                    player.playSound(Sound.sound(org.bukkit.Sound.ITEM_GOAT_HORN_SOUND_1, Sound.Source.MASTER, 1.5F, 1.15F));
+                    if(event.isLeftClick()){
+                        if(shop.getMoney() == 0D){
+                            SpacelifeSpawn.getInstance().getMessageUtil().sendMessage(player, Component.text("Du musst erst geld verdienen um dir welches auszalen zu lassen!", NamedTextColor.RED));
+                            return;
+                        }
+                        SpacelifeSpawn.getInstance().getMessageUtil().sendMessage(player,
+                                Component.text("Du hast ",NamedTextColor.GRAY)
+                                        .append(Component.text(shop.getMoney() + "$", NamedTextColor.GOLD))
+                                        .append(Component.text(" erhalten", NamedTextColor.GRAY)));
+                        spacelifePlayer.addMoney(shop.getMoney());
+                        shop.setMoney(0);
+                        player.playSound(Sound.sound(org.bukkit.Sound.ITEM_GOAT_HORN_SOUND_1, Sound.Source.MASTER, 1.5F, 1.15F));
+                    }
+                    if(event.isRightClick()){
+                        new ChatInputBuilder(Component.text("Gib den Einzahlbetrag oder 'Abbrechen' in den Chat ein:", NamedTextColor.GRAY), player)
+                                .onCancel(() -> SpacelifeSpawn.getInstance().getMessageUtil().sendMessage(player, Component.text("Abgebrochen", NamedTextColor.RED)))
+                                .mustBePositive(true)
+                                .onInputWithDouble(amount -> {
+                                    if(!spacelifePlayer.subtractMoney(amount)){
+                                        SpacelifeSpawn.getInstance().getMessageUtil().sendMessage(player, Component.text("Du hast nicht genug Geld", NamedTextColor.RED));
+                                        return;
+                                    }
+                                    shop.setMoney(shop.getMoney() + amount);
+                                    SpacelifeSpawn.getInstance().getMessageUtil().sendMessage(player, Component.text("Geld erfolgreich eingezahl", NamedTextColor.GREEN));
+                                })
+                                .build();
+                    }
                 });
     }
 }
