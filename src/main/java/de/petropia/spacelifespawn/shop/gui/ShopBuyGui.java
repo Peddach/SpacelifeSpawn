@@ -70,6 +70,10 @@ public class ShopBuyGui {
 
     private void addItems(){
         for(ShopItem item : shop.getShopItems()){
+            if(item.getItem().getType() == Material.AIR){
+                shop.removeShopItem(item);
+                continue;
+            }
             ItemStack bukkitItem = item.getItem().clone();
             List<Component> lore =  bukkitItem.lore();
             if(lore == null){
