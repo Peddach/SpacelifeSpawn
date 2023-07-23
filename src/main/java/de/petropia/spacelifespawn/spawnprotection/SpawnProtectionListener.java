@@ -45,7 +45,8 @@ public class SpawnProtectionListener implements Listener {
           Material.HOPPER_MINECART,
           Material.TNT_MINECART,
           Material.FURNACE_MINECART,
-          Material.CHEST_MINECART
+          Material.CHEST_MINECART,
+          Material.END_CRYSTAL
         );
         if(forbiddenMats.contains(material)){
             event.setCancelled(true);
@@ -61,12 +62,18 @@ public class SpawnProtectionListener implements Listener {
         }
     }
 
-
+    @EventHandler
+    public void onBlockExplode(BlockExplodeEvent event){
+        event.setCancelled(true);
+    }
 
     @EventHandler
     public void onPlayerDamage(EntityDamageEvent event){
         event.setCancelled(true);
         if(!(event.getEntity() instanceof Player player)){
+            if(event.getCause().equals(EntityDamageEvent.DamageCause.VOID)){
+                event.setCancelled(false); //kill command should work
+            }
             return;
         }
         if(event.getCause().equals(EntityDamageEvent.DamageCause.VOID)){
