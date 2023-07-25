@@ -35,6 +35,10 @@ public class SpawnProtectionListener implements Listener {
 
     @EventHandler(priority = EventPriority.NORMAL)
     public void playerInteractlistener(PlayerInteractEvent event){
+        if(event.getAction() == Action.PHYSICAL){
+            event.setCancelled(true);
+            return;
+        }
         Material material = event.getPlayer().getInventory().getItemInMainHand().getType();
         List<Material> forbiddenMats = List.of(
           Material.ARMOR_STAND,
