@@ -1,10 +1,5 @@
 package de.petropia.spacelifespawn.portal;
 
-import de.dytanic.cloudnet.driver.CloudNetDriver;
-import de.dytanic.cloudnet.driver.channel.ChannelMessage;
-import de.dytanic.cloudnet.driver.channel.ChannelMessageTarget;
-import de.dytanic.cloudnet.driver.service.ServiceInfoSnapshot;
-import de.dytanic.cloudnet.ext.bridge.BridgeServiceProperty;
 import de.petropia.spacelifeCore.SpacelifeCore;
 import de.petropia.spacelifeCore.player.SpacelifeDatabase;
 import de.petropia.spacelifeCore.player.SpacelifePlayer;
@@ -14,6 +9,11 @@ import de.petropia.spacelifespawn.SpacelifeSpawn;
 import dev.triumphteam.gui.builder.item.ItemBuilder;
 import dev.triumphteam.gui.guis.Gui;
 import dev.triumphteam.gui.guis.GuiItem;
+import eu.cloudnetservice.driver.channel.ChannelMessage;
+import eu.cloudnetservice.driver.channel.ChannelMessageTarget;
+import eu.cloudnetservice.driver.network.buffer.DataBuf;
+import eu.cloudnetservice.driver.service.ServiceInfoSnapshot;
+import eu.cloudnetservice.modules.bridge.BridgeDocProperties;
 import net.kyori.adventure.sound.Sound;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
@@ -59,20 +59,21 @@ public class FarmworldSelectGUI {
             SpacelifeSpawn.getInstance().getLogger().warning("No Task in config defined for farmworld!!!!");
             return;
         }
-        CloudNetDriver.getInstance().getCloudServiceProvider().getCloudServicesAsync(taskName)
-                .onComplete(serviceInfoSnapshots -> {
-                    final List<ServiceInfoSnapshot> services = serviceInfoSnapshots.stream().filter(serviceInfoSnapshot -> serviceInfoSnapshot.getProperty(BridgeServiceProperty.IS_ONLINE).orElse(false)).toList();
+        SpacelifeSpawn.getInstance().getCloudNetAdapter().cloudServiceProviderInstance().servicesByTaskAsync(taskName)
+                .thenAccept(serviceInfoSnapshots -> {
+                    final List<ServiceInfoSnapshot> services = serviceInfoSnapshots.stream().filter(serviceInfoSnapshot -> serviceInfoSnapshot.readProperty(BridgeDocProperties.IS_ONLINE)).toList();
                     Map<String, Boolean> serviceStatus = new HashMap<>();
                     Map<String, Long> serviceNextDelete = new HashMap<>();
                     services.forEach(service -> {
                         ChannelMessage response = ChannelMessage.builder()
                                 .channel("farmworld_status")
                                 .message("world_status")
-                                .target(ChannelMessageTarget.Type.SERVICE, service.getName())
+                                .target(ChannelMessageTarget.Type.SERVICE, service.name())
                                 .build()
                                 .sendSingleQuery();
-                        serviceStatus.put(service.getName(), response.getJson().getBoolean("available"));
-                        serviceNextDelete.put(service.getName(), response.getJson().getLong("delete"));
+                        DataBuf dataBuf = response.content();
+                        serviceStatus.put(service.name(),dataBuf.readBoolean());
+                        serviceNextDelete.put(service.name(), dataBuf.readLong());
                     });
                     Bukkit.getScheduler().runTask(SpacelifeSpawn.getInstance(), () -> {
                         if(services.size() == 0){
@@ -88,12 +89,15 @@ public class FarmworldSelectGUI {
                         else if(services.size() == 4) slots = new int[]{10, 12, 14, 16};
                         else slots = new int[] {8, 10, 11, 12, 13, 14, 15, 16, 17};
                         for (int i = 0; i < services.size() && i < slots.length; i++) {
-                            gui.setItem(slots[i], createServerItem(services.get(i), i + 1, serviceStatus.get(services.get(i).getName()), serviceNextDelete.get(services.get(i).getName())));
+                            gui.setItem(slots[i], createServerItem(services.get(i), i + 1, serviceStatus.get(services.get(i).name()), serviceNextDelete.get(services.get(i).name())));
                         }
                         gui.setItem(8, createLeaveItem());
                         gui.open(player);
                     });
-                }).fireExceptionOnFailure();
+                }).exceptionally(e -> {
+                    e.printStackTrace();
+                    return null;
+                });
     }
 
     private GuiItem createServerItem(ServiceInfoSnapshot service, int number, boolean status, long nextDelete) {
@@ -102,8 +106,8 @@ public class FarmworldSelectGUI {
                 .name(Component.text("Farmwelt-" + number, NamedTextColor.GRAY).decorate(TextDecoration.BOLD))
                 .lore(
                         Component.empty(),
-                        Component.text("Spielerzahl: ", NamedTextColor.GRAY).append(Component.text(service.getProperty(BridgeServiceProperty.ONLINE_COUNT).orElse(0), NamedTextColor.GOLD)),
-                        Component.text("Version: ", NamedTextColor.GRAY).append(Component.text(formatVersion(service.getProperty(BridgeServiceProperty.VERSION).orElse("Unbekannt")), NamedTextColor.GOLD)),
+                        Component.text("Spielerzahl: ", NamedTextColor.GRAY).append(Component.text(service.readProperty(BridgeDocProperties.ONLINE_COUNT), NamedTextColor.GOLD)),
+                        Component.text("Version: ", NamedTextColor.GRAY).append(Component.text(formatVersion(service.readProperty(BridgeDocProperties.VERSION)), NamedTextColor.GOLD)),
                         Component.text("Status: ", NamedTextColor.GRAY).append(formatIsOnline(status)),
                         Component.text("Nächster Reset: ", NamedTextColor.GRAY).append(formatNextReset(nextDelete)),
                         Component.empty(),
@@ -121,7 +125,7 @@ public class FarmworldSelectGUI {
                     BlockAnyActionListener.blockPlayer(player);
                     SpacelifePlayerLoadingListener.blockInvSave(player);
                     spacelifePlayer.saveInventory().thenAccept(v -> {
-                        Bukkit.getScheduler().runTaskLater(SpacelifeCore.getInstance(), () -> SpacelifeCore.getInstance().getCloudNetAdapter().sendPlayerToServer(player, service.getName()), 10);
+                        Bukkit.getScheduler().runTaskLater(SpacelifeCore.getInstance(), () -> SpacelifeCore.getInstance().getCloudNetAdapter().sendPlayerToServer(player, service.name()), 10);
                         Bukkit.getScheduler().runTaskLater(SpacelifeCore.getInstance(), () -> {
                             if (player.isOnline()) {
                                 player.kick(Component.text("Etwas ist schief gelaufen!", NamedTextColor.RED));
@@ -163,6 +167,9 @@ public class FarmworldSelectGUI {
     }
 
     private String formatVersion(String rawVersion){
+        if(rawVersion == null){
+            return "Unbekannt";
+        }
         Pattern pattern = Pattern.compile("\\b\\d+\\.\\d+(\\.\\d+)?\\b");
         Matcher matcher = pattern.matcher(rawVersion);
         if (matcher.find()) {
