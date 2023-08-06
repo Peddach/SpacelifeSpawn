@@ -292,9 +292,11 @@ public class Shop implements Cloneable {
             sign1.line(1, Component.text(ownerName).color(TextColor.fromCSSHexString("#3E0003")));
             sign1.line(2, Component.text("Shopname:").decorate(TextDecoration.BOLD).color(TextColor.fromCSSHexString("#202947")));
             sign1.line(3, Component.text(name).color(TextColor.fromCSSHexString("#3E0003")));
+            sign1.setWaxed(true);
 
             sign2.line(1, Component.text("Laufzeit:").decorate(TextDecoration.BOLD).color(TextColor.fromCSSHexString("#202947")));
             sign2.line(2, Component.text(convertUnixTimestamp(rentedUntil)).color(TextColor.fromCSSHexString("#3E0003")));
+            sign2.setWaxed(true);
             sign1.update(true);
             sign2.update(true);
             return;
@@ -307,6 +309,10 @@ public class Shop implements Cloneable {
         sign2.line(1, Component.text("Kosten:").color(TextColor.fromCSSHexString("#D5645")));
         sign2.line(2, Component.text(SpacelifeSpawn.getInstance().getConfig().getInt("shopCost") + "$").decorate(TextDecoration.BOLD).color(TextColor.fromCSSHexString("#75c454")));
         sign2.line(3, Component.empty());
+
+        sign1.setWaxed(true);
+        sign2.setWaxed(true);
+
         sign1.update(true);
         sign2.update(true);
     }

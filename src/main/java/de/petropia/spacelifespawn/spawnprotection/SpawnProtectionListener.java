@@ -67,6 +67,14 @@ public class SpawnProtectionListener implements Listener {
     }
 
     @EventHandler
+    public void onSignEdit(SignChangeEvent event){
+        if(isPlayerPermittedToEdit(event.getPlayer().getLocation(), event.getPlayer())){
+            return;
+        }
+        event.setCancelled(true);
+    }
+
+    @EventHandler
     public void onBlockExplode(BlockExplodeEvent event){
         event.setCancelled(true);
     }
