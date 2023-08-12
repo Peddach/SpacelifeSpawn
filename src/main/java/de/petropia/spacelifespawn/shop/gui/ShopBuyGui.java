@@ -222,6 +222,11 @@ public class ShopBuyGui {
                                 .onCancel(() -> SpacelifeSpawn.getInstance().getMessageUtil().sendMessage(player, Component.text("Abgebrochen", NamedTextColor.RED)))
                                 .mustBePositive(true)
                                 .onInputWithDouble(amount -> {
+                                    if(amount >= 1_000_000){
+                                        SpacelifeSpawn.getInstance().getMessageUtil().sendMessage(player, Component.text("Das scheint etwas viel zu sein!", NamedTextColor.RED));
+                                        return;
+                                    }
+                                    amount = Math.floor(amount * 100) / 100;
                                     if(!spacelifePlayer.subtractMoney(amount)){
                                         SpacelifeSpawn.getInstance().getMessageUtil().sendMessage(player, Component.text("Du hast nicht genug Geld", NamedTextColor.RED));
                                         return;
