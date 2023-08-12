@@ -9,6 +9,8 @@ import com.github.juliarn.npclib.bukkit.BukkitVersionAccessor;
 import com.github.juliarn.npclib.bukkit.BukkitWorldAccessor;
 import de.petropia.spacelifespawn.database.ShopDatabase;
 import de.petropia.spacelifespawn.database.commands.ShopCommand;
+import de.petropia.spacelifespawn.jobs.JobNPC;
+import de.petropia.spacelifespawn.jobs.JobNPCListener;
 import de.petropia.spacelifespawn.portal.FarmworldPortalListener;
 import de.petropia.spacelifespawn.shop.Shop;
 import de.petropia.spacelifespawn.shop.ShopRegistry;
@@ -16,6 +18,8 @@ import de.petropia.spacelifespawn.shop.ShopRentListener;
 import de.petropia.spacelifespawn.shop.gui.ShopNpcListener;
 import de.petropia.spacelifespawn.spawnprotection.SpawnProtectionListener;
 import de.petropia.turtleServer.api.PetropiaPlugin;
+import org.bukkit.Bukkit;
+import org.bukkit.Location;
 import org.bukkit.World;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
@@ -52,6 +56,23 @@ public class SpacelifeSpawn extends PetropiaPlugin {
                 .build();
         npcPlatform.eventBus().subscribe(ShowNpcEvent.Post.class, event -> new ShopNpcListener().handleNpcShow(event));
         npcPlatform.eventBus().subscribe(InteractNpcEvent.class, event -> new ShopNpcListener().handlNpcClick(event));
+        npcPlatform.eventBus().subscribe(InteractNpcEvent.class, event -> new JobNPCListener().onNpcClick(event));
+        loadJobNpcs();
+    }
+
+    private void loadJobNpcs(){
+        for(String section : getConfig().getConfigurationSection("JobNpcs").getKeys(false)){
+            section = "JobNpcs." + section;
+            double x = getConfig().getDouble(section + ".X");
+            double y = getConfig().getDouble(section + ".Y");
+            double z = getConfig().getDouble(section + ".Z");
+            String jobID = getConfig().getString(section + ".JobID");
+            String texture = getConfig().getString(section + ".Texture");
+            String signature = getConfig().getString(section + ".Signature");
+            String name = getConfig().getString(section + ".Name");
+            Location location = new Location(Bukkit.getWorld("world"), x, y, z);
+            new JobNPC(location, jobID, name, texture, signature);
+        }
     }
 
     @Override
