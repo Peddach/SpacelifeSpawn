@@ -72,6 +72,11 @@ public class ShopItemEditGui {
                            .mustBePositive(true)
                            .onCancel(() -> gui.open(player))
                            .onInputWithDouble(amount -> {
+                               if(amount >= 1_000_000){
+                                   SpacelifeSpawn.getInstance().getMessageUtil().sendMessage(player, Component.text("Dieser Preis scheint etwas hoch zu sein!", NamedTextColor.RED));
+                                   return;
+                               }
+                               amount = Math.floor(amount * 100) / 100;
                                shopItem.setBuyPrice(amount);
                                ShopDatabase.getInstance().saveShop(shop);
                                SpacelifeSpawn.getInstance().getMessageUtil().sendMessage(player, Component.text("Preis geändert!", NamedTextColor.GREEN));
@@ -97,6 +102,11 @@ public class ShopItemEditGui {
                             .mustBePositive(true)
                             .onCancel(() -> gui.open(player))
                             .onInputWithDouble(amount -> {
+                                if(amount >= 1_000_000){
+                                    SpacelifeSpawn.getInstance().getMessageUtil().sendMessage(player, Component.text("Dieser Preis scheint etwas hoch zu sein!", NamedTextColor.RED));
+                                    return;
+                                }
+                                amount = Math.floor(amount * 100) / 100;
                                 shopItem.setSellPrice(amount);
                                 ShopDatabase.getInstance().saveShop(shop);
                                 SpacelifeSpawn.getInstance().getMessageUtil().sendMessage(player, Component.text("Preis geändert!", NamedTextColor.GREEN));

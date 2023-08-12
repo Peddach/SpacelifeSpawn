@@ -25,6 +25,7 @@ import net.kyori.adventure.text.format.TextDecoration;
 import org.bson.types.ObjectId;
 import org.bukkit.*;
 import org.bukkit.block.*;
+import org.bukkit.block.sign.Side;
 import org.bukkit.entity.ArmorStand;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.Inventory;
@@ -176,6 +177,7 @@ public class Shop implements Cloneable {
         this.name = null;
         this.trustedPlayers = null;
         this.shopItems = null;
+        this.money = 0;
         ShopDatabase.getInstance().saveShop(this);
 
         int minX = Math.min(x1, x2);
@@ -288,27 +290,31 @@ public class Shop implements Cloneable {
             return;
         }
         if(rented){
-            sign1.line(0, Component.text("Besitzer:").decorate(TextDecoration.BOLD).color(TextColor.fromCSSHexString("#202947")));
-            sign1.line(1, Component.text(ownerName).color(TextColor.fromCSSHexString("#3E0003")));
-            sign1.line(2, Component.text("Shopname:").decorate(TextDecoration.BOLD).color(TextColor.fromCSSHexString("#202947")));
-            sign1.line(3, Component.text(name).color(TextColor.fromCSSHexString("#3E0003")));
-            sign1.setWaxed(true);
+            for(Side side : Side.values()){
+                sign1.getSide(side).line(0, Component.text("Besitzer:").decorate(TextDecoration.BOLD).color(TextColor.fromCSSHexString("#202947")));
+                sign1.getSide(side).line(1, Component.text(ownerName).color(TextColor.fromCSSHexString("#3E0003")));
+                sign1.getSide(side).line(2, Component.text("Shopname:").decorate(TextDecoration.BOLD).color(TextColor.fromCSSHexString("#202947")));
+                sign1.getSide(side).line(3, Component.text(name).color(TextColor.fromCSSHexString("#3E0003")));
 
-            sign2.line(1, Component.text("Laufzeit:").decorate(TextDecoration.BOLD).color(TextColor.fromCSSHexString("#202947")));
-            sign2.line(2, Component.text(convertUnixTimestamp(rentedUntil)).color(TextColor.fromCSSHexString("#3E0003")));
+                sign2.getSide(side).line(1, Component.text("Laufzeit:").decorate(TextDecoration.BOLD).color(TextColor.fromCSSHexString("#202947")));
+                sign2.getSide(side).line(2, Component.text(convertUnixTimestamp(rentedUntil)).color(TextColor.fromCSSHexString("#3E0003")));
+            }
             sign2.setWaxed(true);
+            sign1.setWaxed(true);
             sign1.update(true);
             sign2.update(true);
             return;
         }
-        sign1.line(0, Component.empty());
-        sign1.line(1, Component.text("Klicke zum").decorate(TextDecoration.BOLD, TextDecoration.ITALIC).color(TextColor.fromCSSHexString("#32821")));
-        sign1.line(2, Component.text("mieten").decorate(TextDecoration.BOLD, TextDecoration.ITALIC).color(TextColor.fromCSSHexString("#32821")));
-        sign1.line(3, Component.empty());
-        sign2.line(0, Component.empty());
-        sign2.line(1, Component.text("Kosten:").color(TextColor.fromCSSHexString("#D5645")));
-        sign2.line(2, Component.text(SpacelifeSpawn.getInstance().getConfig().getInt("shopCost") + "$").decorate(TextDecoration.BOLD).color(TextColor.fromCSSHexString("#75c454")));
-        sign2.line(3, Component.empty());
+        for(Side side : Side.values()){
+            sign1.getSide(side).line(0, Component.empty());
+            sign1.getSide(side).line(1, Component.text("Klicke zum").decorate(TextDecoration.BOLD, TextDecoration.ITALIC).color(TextColor.fromCSSHexString("#32821")));
+            sign1.getSide(side).line(2, Component.text("mieten").decorate(TextDecoration.BOLD, TextDecoration.ITALIC).color(TextColor.fromCSSHexString("#32821")));
+            sign1.getSide(side).line(3, Component.empty());
+            sign2.getSide(side).line(0, Component.empty());
+            sign2.getSide(side).line(1, Component.text("Kosten:").color(TextColor.fromCSSHexString("#D5645")));
+            sign2.getSide(side).line(2, Component.text(SpacelifeSpawn.getInstance().getConfig().getInt("shopCost") + "$").decorate(TextDecoration.BOLD).color(TextColor.fromCSSHexString("#75c454")));
+            sign2.getSide(side).line(3, Component.empty());
+        }
 
         sign1.setWaxed(true);
         sign2.setWaxed(true);

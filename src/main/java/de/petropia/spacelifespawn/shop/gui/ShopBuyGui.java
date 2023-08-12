@@ -154,6 +154,11 @@ public class ShopBuyGui {
                            .onCancel(() -> SpacelifeSpawn.getInstance().getMessageUtil().sendMessage(player, Component.text("Abgebrochen", NamedTextColor.RED)))
                            .mustBePositive(true)
                            .onInputWithDouble(price -> {
+                               if(price >= 1_000_000){
+                                   SpacelifeSpawn.getInstance().getMessageUtil().sendMessage(player, Component.text("Dieser Preis scheint etwas hoch zu sein!", NamedTextColor.RED));
+                                   return;
+                               }
+                               price = Math.floor(price * 100) / 100;
                                if(player.getInventory().getItemInMainHand().getType() == Material.AIR){
                                     SpacelifeSpawn.getInstance().getMessageUtil().sendMessage(player, Component.text("Bitte halte das Item und seine korrekte Anzahl, die du verkaufen möchtest in der Hand", NamedTextColor.RED));
                                     return;
