@@ -94,7 +94,7 @@ public class BuildworldSelectGUI {
                         Component.text("Spielerzahl: ", NamedTextColor.GRAY).append(Component.text(service.readProperty(BridgeDocProperties.ONLINE_COUNT), NamedTextColor.GOLD)),
                         Component.text("Grundstücke: ", NamedTextColor.GRAY).append(Component.text(plotCount).color(NamedTextColor.GOLD)),
                         Component.empty(),
-                        Component.text("Linksklick", NamedTextColor.GRAY).append(Component.text(" >> ", NamedTextColor.DARK_GRAY)).append(Component.text("Farmwelt betreten", NamedTextColor.GREEN)),
+                        Component.text("Linksklick", NamedTextColor.GRAY).append(Component.text(" >> ", NamedTextColor.DARK_GRAY)).append(Component.text("Bauwelt betreten", NamedTextColor.GREEN)),
                         Component.empty()
                 )
                 .flags(ItemFlag.HIDE_ATTRIBUTES)
