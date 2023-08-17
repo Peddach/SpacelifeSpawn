@@ -5,7 +5,13 @@ Farmwelt:
   z1: -5
   x2: -33
   z2: -3
+Bauwelt:
+  x1: -56
+  z1: 23
+  x2: -59
+  z2: 26
 FarmweltTask: "SL_Farmwelt"
+BauweltTask: "SL_Bauwelt"
 JobNpcs:
   Cave:
     X: 14.5

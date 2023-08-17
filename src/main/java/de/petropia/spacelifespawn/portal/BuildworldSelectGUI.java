@@ -14,7 +14,6 @@ import eu.cloudnetservice.driver.channel.ChannelMessageTarget;
 import eu.cloudnetservice.driver.network.buffer.DataBuf;
 import eu.cloudnetservice.driver.service.ServiceInfoSnapshot;
 import eu.cloudnetservice.modules.bridge.BridgeDocProperties;
-import net.kyori.adventure.sound.Sound;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.format.TextDecoration;
@@ -22,24 +21,17 @@ import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemFlag;
 
-import java.time.Instant;
-import java.time.ZoneId;
-import java.time.format.DateTimeFormatter;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
+import java.util.*;
 
-public class FarmworldSelectGUI {
+public class BuildworldSelectGUI {
 
     private final Player player;
     private final Gui gui;
 
-    public FarmworldSelectGUI(Player player){
+    public BuildworldSelectGUI(Player player) {
         this.player = player;
-        this.gui = Gui.gui()
-                .title(Component.text("Farmwelt auswählen", NamedTextColor.DARK_GREEN).decorate(TextDecoration.BOLD))
+        gui = Gui.gui()
+                .title(Component.text("Bauwelt auswählen", NamedTextColor.DARK_GREEN).decorate(TextDecoration.BOLD))
                 .rows(3)
                 .disableAllInteractions()
                 .create();
@@ -48,26 +40,25 @@ public class FarmworldSelectGUI {
     }
 
     private void fillGui(){
-        String taskName = SpacelifeSpawn.getInstance().getConfig().getString("FarmweltTask");
+        String taskName = SpacelifeSpawn.getInstance().getConfig().getString("BauweltTask");
         if(taskName == null){
-            SpacelifeSpawn.getInstance().getLogger().warning("No Task in config defined for farmworld!!!!");
+            SpacelifeSpawn.getInstance().getLogger().warning("No Task in config defined for bauwelt!!!!");
             return;
         }
         SpacelifeSpawn.getInstance().getCloudNetAdapter().cloudServiceProviderInstance().servicesByTaskAsync(taskName)
                 .thenAccept(serviceInfoSnapshots -> {
                     final List<ServiceInfoSnapshot> services = serviceInfoSnapshots.stream().filter(serviceInfoSnapshot -> serviceInfoSnapshot.readProperty(BridgeDocProperties.IS_ONLINE)).toList();
-                    Map<String, Boolean> serviceStatus = new HashMap<>();
-                    Map<String, Long> serviceNextDelete = new HashMap<>();
+                    HashMap<String, BuildworldStatusDTO> worldStatus = new HashMap<>();
                     services.forEach(service -> {
                         ChannelMessage response = ChannelMessage.builder()
-                                .channel("farmworld_status")
+                                .channel("bauworld_status")
                                 .message("world_status")
                                 .target(ChannelMessageTarget.Type.SERVICE, service.name())
                                 .build()
                                 .sendSingleQuery();
                         DataBuf dataBuf = response.content();
-                        serviceStatus.put(service.name(),dataBuf.readBoolean());
-                        serviceNextDelete.put(service.name(), dataBuf.readLong());
+                        BuildworldStatusDTO dto = dataBuf.readObject(BuildworldStatusDTO.class);
+                        worldStatus.put(response.sender().name(), dto);
                     });
                     Bukkit.getScheduler().runTask(SpacelifeSpawn.getInstance(), () -> {
                         if(services.size() == 0){
@@ -83,7 +74,7 @@ public class FarmworldSelectGUI {
                         else if(services.size() == 4) slots = new int[]{10, 12, 14, 16};
                         else slots = new int[] {8, 10, 11, 12, 13, 14, 15, 16, 17};
                         for (int i = 0; i < services.size() && i < slots.length; i++) {
-                            gui.setItem(slots[i], createServerItem(services.get(i), i + 1, serviceStatus.get(services.get(i).name()), serviceNextDelete.get(services.get(i).name())));
+                            gui.setItem(slots[i], createServerItem(services.get(i), i + 1, worldStatus.get(services.get(i).name()).plotCount()));
                         }
                         gui.setItem(8, ServerPortal.createLeaveItem());
                         gui.open(player);
@@ -94,27 +85,20 @@ public class FarmworldSelectGUI {
                 });
     }
 
-    private GuiItem createServerItem(ServiceInfoSnapshot service, int number, boolean status, long nextDelete) {
+    private GuiItem createServerItem(ServiceInfoSnapshot service, int number, int plotCount) {
         return ItemBuilder.skull()
-                .texture("eyJ0ZXh0dXJlcyI6eyJTS0lOIjp7InVybCI6Imh0dHA6Ly90ZXh0dXJlcy5taW5lY3JhZnQubmV0L3RleHR1cmUvNDM4Y2YzZjhlNTRhZmMzYjNmOTFkMjBhNDlmMzI0ZGNhMTQ4NjAwN2ZlNTQ1Mzk5MDU1NTI0YzE3OTQxZjRkYyJ9fX0=")
-                .name(Component.text("Farmwelt-" + number, NamedTextColor.GRAY).decorate(TextDecoration.BOLD))
+                .texture("eyJ0ZXh0dXJlcyI6eyJTS0lOIjp7InVybCI6Imh0dHA6Ly90ZXh0dXJlcy5taW5lY3JhZnQubmV0L3RleHR1cmUvMjEyYTAzYTRjMTFiNGQ0NzI0NzJlN2U0NTkzZDJlMTI2YTYyNTllMzNjYzgxZjQ0ZWIwNWNmMDQyZDA3Njk2NyJ9fX0=")
+                .name(Component.text("Bauwelt-" + number, NamedTextColor.GRAY).decorate(TextDecoration.BOLD))
                 .lore(
                         Component.empty(),
                         Component.text("Spielerzahl: ", NamedTextColor.GRAY).append(Component.text(service.readProperty(BridgeDocProperties.ONLINE_COUNT), NamedTextColor.GOLD)),
-                        Component.text("Version: ", NamedTextColor.GRAY).append(Component.text(formatVersion(service.readProperty(BridgeDocProperties.VERSION)), NamedTextColor.GOLD)),
-                        Component.text("Status: ", NamedTextColor.GRAY).append(formatIsOnline(status)),
-                        Component.text("Nächster Reset: ", NamedTextColor.GRAY).append(formatNextReset(nextDelete)),
+                        Component.text("Grundstücke: ", NamedTextColor.GRAY).append(Component.text(plotCount).color(NamedTextColor.GOLD)),
                         Component.empty(),
                         Component.text("Linksklick", NamedTextColor.GRAY).append(Component.text(" >> ", NamedTextColor.DARK_GRAY)).append(Component.text("Farmwelt betreten", NamedTextColor.GREEN)),
                         Component.empty()
                 )
                 .flags(ItemFlag.HIDE_ATTRIBUTES)
                 .asGuiItem(event -> {
-                    if(!status){
-                        player.playSound(Sound.sound(org.bukkit.Sound.ENTITY_VILLAGER_NO, Sound.Source.MASTER, 1F, 1F));
-                        SpacelifeSpawn.getInstance().getMessageUtil().sendMessage(player, Component.text("Du kannst der Farmwelt erst beitreten wenn sie resettet ist. Versuche es später erneut", NamedTextColor.RED));
-                        return;
-                    }
                     SpacelifePlayer spacelifePlayer = SpacelifeDatabase.getInstance().getCachedPlayer(player.getUniqueId());
                     BlockAnyActionListener.blockPlayer(player);
                     SpacelifePlayerLoadingListener.blockInvSave(player);
@@ -131,28 +115,5 @@ public class FarmworldSelectGUI {
                     });
                 });
 
-    }
-
-    private Component formatNextReset(long nextDelete) {
-        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd.MM.yyyy HH:mm").withZone(ZoneId.of("Europe/Berlin"));
-        Instant instant = Instant.ofEpochSecond(nextDelete);
-        return Component.text(formatter.format(instant), NamedTextColor.GOLD);
-    }
-
-    private String formatVersion(String rawVersion){
-        if(rawVersion == null){
-            return "Unbekannt";
-        }
-        Pattern pattern = Pattern.compile("\\b\\d+\\.\\d+(\\.\\d+)?\\b");
-        Matcher matcher = pattern.matcher(rawVersion);
-        if (matcher.find()) {
-            return matcher.group();
-        } else {
-            return "Unbekannt";
-        }
-    }
-
-    private Component formatIsOnline(boolean status){
-        return status ? Component.text("online", NamedTextColor.GREEN) : Component.text("Wird resettet", NamedTextColor.RED);
     }
 }

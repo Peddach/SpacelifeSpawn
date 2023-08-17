@@ -11,7 +11,9 @@ import de.petropia.spacelifespawn.database.ShopDatabase;
 import de.petropia.spacelifespawn.database.commands.ShopCommand;
 import de.petropia.spacelifespawn.jobs.JobNPC;
 import de.petropia.spacelifespawn.jobs.JobNPCListener;
-import de.petropia.spacelifespawn.portal.FarmworldPortalListener;
+import de.petropia.spacelifespawn.portal.BuildworldSelectGUI;
+import de.petropia.spacelifespawn.portal.FarmworldSelectGUI;
+import de.petropia.spacelifespawn.portal.ServerPortal;
 import de.petropia.spacelifespawn.shop.Shop;
 import de.petropia.spacelifespawn.shop.ShopRegistry;
 import de.petropia.spacelifespawn.shop.ShopRentListener;
@@ -37,12 +39,12 @@ public class SpacelifeSpawn extends PetropiaPlugin {
         saveConfig();
         reloadConfig();
         instance = this;
+        loadPortals();
         new ShopDatabase();
         loadShops();
         getServer().getPluginManager().registerEvents(new SpawnProtectionListener(), this);
         getServer().getPluginManager().registerEvents(new ShopRentListener(), this);
         getServer().getPluginManager().registerEvents(new ShopNpcListener(), this);
-        getServer().getPluginManager().registerEvents(new FarmworldPortalListener(), this);
         this.getCommand("shop").setExecutor(new ShopCommand());
         this.getCommand("shop").setTabCompleter(new ShopCommand());
         npcPlatform = BukkitPlatform.bukkitNpcPlatformBuilder()
@@ -58,6 +60,20 @@ public class SpacelifeSpawn extends PetropiaPlugin {
         npcPlatform.eventBus().subscribe(InteractNpcEvent.class, event -> new ShopNpcListener().handlNpcClick(event));
         npcPlatform.eventBus().subscribe(InteractNpcEvent.class, event -> new JobNPCListener().onNpcClick(event));
         loadJobNpcs();
+    }
+
+    private void loadPortals(){
+        int x1 = getConfig().getInt("Farmwelt.x1");
+        int z1 = getConfig().getInt("Farmwelt.z1");
+        int x2 = getConfig().getInt("Farmwelt.x2");
+        int z2 = getConfig().getInt("Farmwelt.z2");
+        new ServerPortal(x1, z1, x2, z2, FarmworldSelectGUI::new);
+
+        x1 = getConfig().getInt("Bauwelt.x1");
+        z1 = getConfig().getInt("Bauwelt.z1");
+        x2 = getConfig().getInt("Bauwelt.x2");
+        z2 = getConfig().getInt("Bauwelt.z2");
+        new ServerPortal(x1, z1, x2, z2, BuildworldSelectGUI::new);
     }
 
     private void loadJobNpcs(){
