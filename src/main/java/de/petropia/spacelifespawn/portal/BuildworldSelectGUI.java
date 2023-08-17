@@ -48,7 +48,7 @@ public class BuildworldSelectGUI {
         SpacelifeSpawn.getInstance().getCloudNetAdapter().cloudServiceProviderInstance().servicesByTaskAsync(taskName)
                 .thenAccept(serviceInfoSnapshots -> {
                     final List<ServiceInfoSnapshot> services = serviceInfoSnapshots.stream().filter(serviceInfoSnapshot -> serviceInfoSnapshot.readProperty(BridgeDocProperties.IS_ONLINE)).toList();
-                    HashMap<String, BuildworldStatusDTO> worldStatus = new HashMap<>();
+                    HashMap<String, Integer> worldStatus = new HashMap<>();
                     services.forEach(service -> {
                         ChannelMessage response = ChannelMessage.builder()
                                 .channel("bauworld_status")
@@ -57,8 +57,8 @@ public class BuildworldSelectGUI {
                                 .build()
                                 .sendSingleQuery();
                         DataBuf dataBuf = response.content();
-                        BuildworldStatusDTO dto = dataBuf.readObject(BuildworldStatusDTO.class);
-                        worldStatus.put(response.sender().name(), dto);
+                        int plots = dataBuf.readInt();
+                        worldStatus.put(response.sender().name(), plots);
                     });
                     Bukkit.getScheduler().runTask(SpacelifeSpawn.getInstance(), () -> {
                         if(services.size() == 0){
@@ -74,7 +74,7 @@ public class BuildworldSelectGUI {
                         else if(services.size() == 4) slots = new int[]{10, 12, 14, 16};
                         else slots = new int[] {8, 10, 11, 12, 13, 14, 15, 16, 17};
                         for (int i = 0; i < services.size() && i < slots.length; i++) {
-                            gui.setItem(slots[i], createServerItem(services.get(i), i + 1, worldStatus.get(services.get(i).name()).plotCount()));
+                            gui.setItem(slots[i], createServerItem(services.get(i), i + 1, worldStatus.get(services.get(i).name())));
                         }
                         gui.setItem(8, ServerPortal.createLeaveItem());
                         gui.open(player);
